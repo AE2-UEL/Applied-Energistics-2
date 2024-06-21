@@ -1,0 +1,18 @@
+{
+  "conditions": [
+    {
+      "type": "minecraft:item_exists",
+      "item": "appliedenergistics2:energy_acceptor"
+    }
+  ],
+  "result": {
+    "item": "appliedenergistics2:energy_acceptor"
+  },
+  "type": "forge:ore_shapeless",
+  "ingredients": [
+    {
+      "type": "appliedenergistics2:part",
+      "part": "part.energy_acceptor"
+    }
+  ]
+}

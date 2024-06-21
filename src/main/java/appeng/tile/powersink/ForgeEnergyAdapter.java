@@ -9,11 +9,11 @@ import net.minecraftforge.energy.IEnergyStorage;
 /**
  * Adapts an {@link IExternalPowerSink} to Forges {@link IEnergyStorage}.
  */
-class ForgeEnergyAdapter implements IEnergyStorage {
+public class ForgeEnergyAdapter implements IEnergyStorage {
 
     private final IExternalPowerSink sink;
 
-    ForgeEnergyAdapter(IExternalPowerSink sink) {
+    public ForgeEnergyAdapter(IExternalPowerSink sink) {
         this.sink = sink;
     }
 

@@ -54,6 +54,7 @@ public final class ApiParts implements IParts {
     private final IItemDefinition oreDictStorageBus;
     private final IItemDefinition importBus;
     private final IItemDefinition exportBus;
+    private final IItemDefinition energyAcceptor;
     private final IItemDefinition iface;
     private final IItemDefinition fluidIface;
     private final IItemDefinition levelEmitter;
@@ -115,6 +116,7 @@ public final class ApiParts implements IParts {
         this.oreDictStorageBus = new DamagedItemDefinition("part.bus.oredict_storage", itemPart.createPart(PartType.OREDICT_STORAGE_BUS));
         this.importBus = new DamagedItemDefinition("part.bus.import", itemPart.createPart(PartType.IMPORT_BUS));
         this.exportBus = new DamagedItemDefinition("part.bus.export", itemPart.createPart(PartType.EXPORT_BUS));
+        this.energyAcceptor = new DamagedItemDefinition("part.energy_acceptor", itemPart.createPart(PartType.ENERGY_ACCEPTOR));
         this.iface = new DamagedItemDefinition("part.interface", itemPart.createPart(PartType.INTERFACE));
         this.fluidIface = new DamagedItemDefinition("part.fluid_interface", itemPart.createPart(PartType.FLUID_INTERFACE));
         this.levelEmitter = new DamagedItemDefinition("part.level_emitter", itemPart.createPart(PartType.LEVEL_EMITTER));
@@ -248,6 +250,9 @@ public final class ApiParts implements IParts {
     public IItemDefinition exportBus() {
         return this.exportBus;
     }
+
+    @Override
+    public IItemDefinition energyAcceptor() {return this.energyAcceptor;}
 
     @Override
     public IItemDefinition iface() {

@@ -584,6 +584,7 @@ item.appliedenergistics2.multi_part.interface_terminal.name=ME Interface Termina
 item.appliedenergistics2.multi_part.interface_configuration_terminal.name=ME Interface Configuration Terminal
 item.appliedenergistics2.multi_part.fluid_interface_configuration_terminal.name=ME Fluid Interface Configuration Terminal
 item.appliedenergistics2.multi_part.fluid_terminal.name=ME Fluid Terminal
+item.appliedenergistics2.multi_part.energy_acceptor.name=ME Energy Acceptor
 item.appliedenergistics2.multi_part.invalid_type.name=Disabled Item
 
 item.appliedenergistics2.spatial_storage_cell_128_cubed.name=§d128³§r  Spatial Storage Cell

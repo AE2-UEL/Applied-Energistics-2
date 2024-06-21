@@ -63,6 +63,8 @@ public interface IParts {
 
     IItemDefinition exportBus();
 
+    IItemDefinition energyAcceptor();
+
     IItemDefinition iface();
 
     IItemDefinition fluidIface();

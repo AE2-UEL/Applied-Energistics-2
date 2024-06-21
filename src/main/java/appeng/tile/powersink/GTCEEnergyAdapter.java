@@ -11,7 +11,7 @@ public class GTCEEnergyAdapter implements IEnergyContainer {
 
     double EUBuffer;
 
-    GTCEEnergyAdapter(IExternalPowerSink sink) {
+    public GTCEEnergyAdapter(IExternalPowerSink sink) {
         this.sink = sink;
     }
 

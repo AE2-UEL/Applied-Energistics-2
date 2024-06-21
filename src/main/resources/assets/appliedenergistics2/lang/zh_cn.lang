@@ -585,6 +585,7 @@ item.appliedenergistics2.multi_part.interface_terminal.name=ME接口终端
 item.appliedenergistics2.multi_part.interface_configuration_terminal.name=ME接口配置终端
 item.appliedenergistics2.multi_part.fluid_interface_configuration_terminal.name=ME流体接口配置终端
 item.appliedenergistics2.multi_part.fluid_terminal.name=ME流体终端
+item.appliedenergistics2.multi_part.energy_acceptor.name=ME能源接收器
 item.appliedenergistics2.multi_part.invalid_type.name=已禁用
 
 item.appliedenergistics2.spatial_storage_cell_128_cubed.name=§d128³§r-空间存储元件
