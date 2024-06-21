@@ -25,6 +25,8 @@ import appeng.api.storage.data.IAEFluidStack;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
 import appeng.core.localization.WailaText;
+import appeng.util.Platform;
+import com.mekeng.github.common.me.data.IAEGasStack;
 import mcp.mobius.waila.api.IWailaConfigHandler;
 import mcp.mobius.waila.api.IWailaDataAccessor;
 
@@ -64,6 +66,12 @@ public final class StorageMonitorWailaDataProvider extends BasePartWailaDataProv
             } else if (displayed instanceof IAEFluidStack) {
                 final IAEFluidStack ais = (IAEFluidStack) displayed;
                 currentToolTip.add(WailaText.Showing.getLocal() + ": " + ais.getFluid().getLocalizedName(ais.getFluidStack()));
+            }
+
+            if (Platform.isModLoaded("mekeng")){
+                if (displayed instanceof IAEGasStack ais){
+                    currentToolTip.add(WailaText.Showing.getLocal() + ": " + ais.getGas().getLocalizedName());
+                }
             }
 
             currentToolTip.add((isLocked) ? WailaText.Locked.getLocal() : WailaText.Unlocked.getLocal());

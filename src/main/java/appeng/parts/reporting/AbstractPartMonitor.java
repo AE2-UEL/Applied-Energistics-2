@@ -45,7 +45,13 @@ import appeng.util.IWideReadableNumberConverter;
 import appeng.util.Platform;
 import appeng.util.ReadableNumberConverter;
 import appeng.util.item.AEItemStack;
+import com.mekeng.github.common.me.data.IAEGasStack;
+import com.mekeng.github.common.me.data.impl.AEGasStack;
+import com.mekeng.github.common.me.storage.IGasStorageChannel;
+import com.mekeng.github.util.Utils;
 import io.netty.buffer.ByteBuf;
+import mekanism.api.gas.GasStack;
+import mekanism.api.gas.IGasItem;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -79,6 +85,7 @@ public abstract class AbstractPartMonitor extends AbstractPartDisplay implements
 
     private IAEItemStack configuredItem;
     private IAEFluidStack configuredFluid;
+    private IAEStack configuredGas;
     private long configuredAmount;
     private String lastHumanReadableText;
     private boolean isLocked;
@@ -100,6 +107,10 @@ public abstract class AbstractPartMonitor extends AbstractPartDisplay implements
 
         final NBTTagCompound myFluid = data.getCompoundTag("configuredFluid");
         this.configuredFluid = AEFluidStack.fromNBT(myFluid);
+        if (Platform.isModLoaded("mekeng")){
+            final NBTTagCompound myGas = data.getCompoundTag("configuredGas");
+            this.configuredGas = AEGasStack.of(myGas);
+        }
     }
 
     @Override
@@ -116,9 +127,17 @@ public abstract class AbstractPartMonitor extends AbstractPartDisplay implements
         if (this.configuredFluid != null) {
             this.configuredFluid.writeToNBT(myFluid);
         }
+        final NBTTagCompound myGas = new NBTTagCompound();
+        if (Platform.isModLoaded("mekeng")){
+            if (this.configuredGas != null){
+                this.configuredGas.writeToNBT(myGas);
+            }
+        }
 
         data.setTag("configuredItem", myItem);
         data.setTag("configuredFluid", myFluid);
+        data.setTag("configuredGas", myGas);
+
 
     }
 
@@ -130,10 +149,13 @@ public abstract class AbstractPartMonitor extends AbstractPartDisplay implements
         //is configured
         data.writeBoolean(this.configuredItem != null);
         data.writeBoolean(this.configuredFluid != null);
+        data.writeBoolean(this.configuredGas != null);
         if (this.configuredItem != null) {
             this.configuredItem.writeToPacket(data);
         } else if (this.configuredFluid != null) {
             this.configuredFluid.writeToPacket(data);
+        }else if (this.configuredGas != null) {
+            this.configuredGas.writeToPacket(data);
         }
     }
 
@@ -148,15 +170,23 @@ public abstract class AbstractPartMonitor extends AbstractPartDisplay implements
 
         final boolean isItem = data.readBoolean();
         final boolean isFluid = data.readBoolean();
+        final boolean isGas = data.readBoolean();
         if (isItem) {
             this.configuredItem = AEItemStack.fromPacket(data);
             this.configuredFluid = null;
-        } else if (isFluid) {
+            this.configuredGas = null;
+        } else if (isFluid)  {
             this.configuredFluid = AEFluidStack.fromPacket(data);
             this.configuredItem = null;
+            this.configuredGas = null;
+        }else if (isGas) {
+            this.configuredGas = AEGasStack.of(data);
+            this.configuredItem = null;
+            this.configuredFluid = null;
         } else {
             this.configuredItem = null;
             this.configuredFluid = null;
+            this.configuredGas = null;
         }
 
         return needRedraw;
@@ -185,16 +215,33 @@ public abstract class AbstractPartMonitor extends AbstractPartDisplay implements
                 fluidInTank = fluidHandlerItem.drain(Integer.MAX_VALUE, false);
             }
 
-            if (fluidInTank == null) {
-                this.configuredFluid = null;
-                if (!eq.isEmpty()) {
-                    this.configuredItem = AEItemStack.fromItemStack(eq).setStackSize(0);
-                } else {
+            if (Platform.isModLoaded("mekeng")){
+                GasStack gasInTank = null;
+                IGasItem gasHandler = Utils.getGasHandler(eq);
+                if (gasHandler != null) {
+                    gasInTank = gasHandler.getGas(eq);
+                }
+                if (gasInTank == null) {
+                    this.configuredGas = null;
+                } else  {
+                    this.configuredGas = AEGasStack.of(gasInTank).setStackSize(0);
+                    this.configuredItem = null;
+                    this.configuredFluid = null;
+                }
+            }
+
+            if (configuredGas == null) {
+                if (fluidInTank == null) {
+                    this.configuredFluid = null;
+                    if (!eq.isEmpty()) {
+                        this.configuredItem = AEItemStack.fromItemStack(eq).setStackSize(0);
+                    } else {
+                        this.configuredItem = null;
+                    }
+                } else if (fluidInTank.amount > 0) {
+                    this.configuredFluid = AEFluidStack.fromFluidStack(fluidInTank).setStackSize(0);
                     this.configuredItem = null;
                 }
-            } else if (fluidInTank.amount > 0) {
-                this.configuredFluid = AEFluidStack.fromFluidStack(fluidInTank).setStackSize(0);
-                this.configuredItem = null;
             }
 
             this.configureWatchers();
@@ -252,6 +299,13 @@ public abstract class AbstractPartMonitor extends AbstractPartDisplay implements
 
                 this.updateReportingValue(
                         this.getProxy().getStorage().getInventory(AEApi.instance().storage().getStorageChannel(IFluidStorageChannel.class)));
+            } else if (this.configuredGas != null){
+                if (this.myWatcher != null) {
+                    this.myWatcher.add(this.configuredGas);
+                }
+                this.updateReportingValue(
+                        this.getProxy().getStorage().getInventory(AEApi.instance().storage().getStorageChannel(IGasStorageChannel.class))
+                );
             }
         } catch (final GridAccessException e) {
             // >.>
@@ -275,6 +329,14 @@ public abstract class AbstractPartMonitor extends AbstractPartDisplay implements
                 this.configuredAmount = result.getStackSize();
             }
             this.configuredFluid.setStackSize(this.configuredAmount);
+        } else if (this.configuredGas != null){
+            final IAEGasStack result = (IAEGasStack) monitor.getStorageList().findPrecise((T) this.configuredGas);
+            if (result == null) {
+                this.configuredAmount = 0;
+            } else {
+                this.configuredAmount = result.getStackSize();
+            }
+            this.configuredGas.setStackSize(this.configuredAmount);
         }
     }
 
@@ -299,10 +361,16 @@ public abstract class AbstractPartMonitor extends AbstractPartDisplay implements
 
         TesrRenderHelper.moveToFace(facing);
         TesrRenderHelper.rotateToFace(facing, this.getSpin());
-        if (ais instanceof IAEItemStack)
-            TesrRenderHelper.renderItem2dWithAmount((IAEItemStack) ais, 0.8f, 0.17f);
-        if (ais instanceof IAEFluidStack)
-            TesrRenderHelper.renderFluid2dWithAmount((IAEFluidStack) ais, 0.8f, 0.17f);
+        if (ais instanceof IAEItemStack itemStack)
+            TesrRenderHelper.renderItem2dWithAmount(itemStack, 0.8f, 0.17f);
+        if (ais instanceof IAEFluidStack fluidStack)
+            TesrRenderHelper.renderFluid2dWithAmount(fluidStack, 0.8f, 0.17f);
+
+        if (Platform.isModLoaded("mekeng")){
+            if (ais instanceof IAEGasStack gasStack){
+                TesrRenderHelper.renderGas2dWithAmount(gasStack,0.8f, 0.17f);
+            }
+        }
         GlStateManager.popMatrix();
 
     }
@@ -318,6 +386,8 @@ public abstract class AbstractPartMonitor extends AbstractPartDisplay implements
             return this.configuredItem;
         else if (this.configuredFluid != null)
             return this.configuredFluid;
+        else if (this.configuredGas != null)
+            return this.configuredGas;
         return null;
     }
 
@@ -354,6 +424,8 @@ public abstract class AbstractPartMonitor extends AbstractPartDisplay implements
             this.configuredItem.setStackSize(this.configuredAmount);
         } else if (this.configuredFluid != null) {
             this.configuredFluid.setStackSize(this.configuredAmount);
+        } else if (this.configuredGas != null) {
+            this.configuredGas.setStackSize(this.configuredAmount);
         }
         this.getHost().markForUpdate();
     }

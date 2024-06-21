@@ -43,6 +43,8 @@ dependencies {
     compileOnly "curse.maven:inventory-bogo-sorter-632327:4399738"
     compileOnly rfg.deobf("curse.maven:ctm-267602:2915363") // CTM 1.0.2.31
     compileOnly rfg.deobf("curse.maven:actually-additions-228404:3117927") // ActuallyAdditions r152
+    compileOnly rfg.deobf("curse.maven:mekanism-energistics-1027681:5408319") // Mekanism Energistics 0.1.4
+    compileOnly rfg.deobf("curse.maven:mekanism-ce-399904:5351260") // Mekanism-CE 9.12.10
 }
 
 minecraft {
