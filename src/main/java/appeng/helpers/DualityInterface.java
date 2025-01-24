@@ -1455,7 +1455,13 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
                 }
 
                 if (what.getItem() != Items.AIR) {
-                    return what.getItem().getItemStackDisplayName(what);
+                    /* getTranslationKey() and getUnlocalizedNameInefficiently() have different return values in some mod 
+                     * For the Thermal Expansion
+                     * getTranslationKey() returns complete key ending with ".name".
+                     * getUnlocalizedNameInefficiently() returns localized name
+                     * Because CoFH Core overrides method getTranslationKey()
+                     */
+                    return what.getItem().getTranslationKey(what);
                 }
 
                 final Item item = Item.getItemFromBlock(directedBlock);
