@@ -6,16 +6,18 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Set up OpenJDK 17
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'adopt' # You can choose other OpenJDK distributions.
+      - name: Update Build Script (Before Build)
+        run: ./gradlew updateBuildScript
       - name: Build with Gradle
-        run: ./gradlew build # Ensure your gradlew script is executable
+        run: ./gradlew build
       - name: Upload Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: AE2-UEL
           path: build/libs/*.jar # Make sure this path matches the location of your build artifacts
