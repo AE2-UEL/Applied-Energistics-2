@@ -40,6 +40,7 @@ import appeng.api.networking.ticking.IGridTickable;
 import appeng.api.networking.ticking.TickRateModulation;
 import appeng.api.networking.ticking.TickingRequest;
 import appeng.api.parts.IPart;
+import appeng.api.parts.IPartHost;
 import appeng.api.storage.*;
 import appeng.api.storage.channels.IFluidStorageChannel;
 import appeng.api.storage.channels.IItemStorageChannel;
@@ -55,6 +56,7 @@ import appeng.core.AELog;
 import appeng.core.settings.TickRates;
 import appeng.me.GridAccessException;
 import appeng.me.helpers.AENetworkProxy;
+import appeng.me.helpers.IGridProxyable;
 import appeng.me.helpers.MachineSource;
 import appeng.me.storage.MEMonitorIInventory;
 import appeng.me.storage.MEMonitorPassThrough;
@@ -961,7 +963,7 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
     }
 
     @Override
-    public appeng.api.util.IConfigManager getConfigManager() {
+    public IConfigManager getConfigManager() {
         return this.cm;
     }
 
@@ -1024,58 +1026,64 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
 
         for (final EnumFacing s : visitedFaces) {
             final TileEntity te = w.getTileEntity(tile.getPos().offset(s));
-            if (te instanceof IInterfaceHost || (te instanceof TileCableBus && ((TileCableBus) te).getPart(s.getOpposite()) instanceof PartInterface)) {
+            if (te == null) {
                 visitedFaces.remove(s);
+                continue;
+            }
+
+            var mon = te.getCapability(Capabilities.STORAGE_MONITORABLE_ACCESSOR, s.getOpposite());
+            if (mon != null) {
+                visitedFaces.remove(s);
+
                 try {
-                    IInterfaceHost targetTE;
-                    if (te instanceof IInterfaceHost) {
-                        targetTE = (IInterfaceHost) te;
+                    IGridProxyable proxyable;
+                    if (te instanceof IGridProxyable) {
+                        proxyable = (IGridProxyable) te;
+                    } else if (te instanceof IPartHost partHost) {
+                        proxyable = (IGridProxyable) partHost.getPart(s.getOpposite());
                     } else {
-                        targetTE = (IInterfaceHost) ((TileCableBus) te).getPart(s.getOpposite());
+                        continue;
                     }
 
-                    if (targetTE.getInterfaceDuality().sameGrid(this.gridProxy.getGrid())) {
+                    if (proxyable.getProxy().getGrid() == this.gridProxy.getGrid()) {
                         continue;
-                    } else {
-                        IStorageMonitorableAccessor mon = te.getCapability(Capabilities.STORAGE_MONITORABLE_ACCESSOR, s.getOpposite());
-                        if (mon != null) {
-                            IStorageMonitorable sm = mon.getInventory(this.mySource);
-                            if (sm != null && Platform.canAccess(targetTE.getInterfaceDuality().gridProxy, this.mySource)) {
-                                if (this.isBlocking() && sm.getInventory(AEApi.instance().storage().getStorageChannel(IItemStorageChannel.class)).getStorageList().size() > 0) {
+                    }
+
+                    IStorageMonitorable sm = mon.getInventory(this.mySource);
+                    if (sm != null && Platform.canAccess(proxyable.getProxy(), this.mySource)) {
+                        if (this.isBlocking() && !sm.getInventory(AEApi.instance().storage().getStorageChannel(IItemStorageChannel.class)).getStorageList().isEmpty()) {
+                            continue;
+                        } else {
+                            IMEMonitor<IAEItemStack> inv = sm.getInventory(AEApi.instance().storage().getStorageChannel(IItemStorageChannel.class));
+
+                            var allItemsCanBeInserted = true;
+                            for (int x = 0; x < table.getSizeInventory(); x++) {
+                                final ItemStack is = table.getStackInSlot(x);
+                                if (is.isEmpty()) {
                                     continue;
-                                } else {
-                                    IMEMonitor<IAEItemStack> inv = sm.getInventory(AEApi.instance().storage().getStorageChannel(IItemStorageChannel.class));
-
-                                    var allItemsCanBeInserted = true;
-                                    for (int x = 0; x < table.getSizeInventory(); x++) {
-                                        final ItemStack is = table.getStackInSlot(x);
-                                        if (is.isEmpty()) {
-                                            continue;
-                                        }
-                                        IAEItemStack result = inv.injectItems(AEItemStack.fromItemStack(is), Actionable.SIMULATE, this.mySource);
-                                        if (result != null) {
-                                            allItemsCanBeInserted = false;
-                                            break;
-                                        }
-                                    }
-
-                                    if (!allItemsCanBeInserted) {
-                                        continue;
-                                    }
-
-                                    this.visitedFaces.clear();
-                                    for (int x = 0; x < table.getSizeInventory(); x++) {
-                                        final ItemStack is = table.getStackInSlot(x);
-                                        if (!is.isEmpty()) {
-                                            addToSendListFacing(is, s);
-                                        }
-                                    }
-                                    onPushPatternSuccess(patternDetails);
-                                    pushItemsOut(s);
-
-                                    return true;
+                                }
+                                IAEItemStack result = inv.injectItems(AEItemStack.fromItemStack(is), Actionable.SIMULATE, this.mySource);
+                                if (result != null) {
+                                    allItemsCanBeInserted = false;
+                                    break;
                                 }
                             }
+
+                            if (!allItemsCanBeInserted) {
+                                continue;
+                            }
+
+                            this.visitedFaces.clear();
+                            for (int x = 0; x < table.getSizeInventory(); x++) {
+                                final ItemStack is = table.getStackInSlot(x);
+                                if (!is.isEmpty()) {
+                                    addToSendListFacing(is, s);
+                                }
+                            }
+                            onPushPatternSuccess(patternDetails);
+                            pushItemsOut(s);
+
+                            return true;
                         }
                     }
                 } catch (final GridAccessException e) {
