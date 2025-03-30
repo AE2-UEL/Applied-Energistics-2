@@ -73,9 +73,65 @@ import java.util.List;
 
 
 public class ToolMatterCannon extends AEBasePoweredItem implements IStorageCell<IAEItemStack> {
+    private static final double INITIAL_CLOSEST_DISTANCE = 9999999.0D;
+    private static final float ENTITY_HITBOX_GROW = 0.3F;
+
+    private static class EntityHitResult {
+        public final Entity entity;
+        public final double distance;
+
+        public EntityHitResult(Entity entity, double distance) {
+            this.entity = entity;
+            this.distance = distance;
+        }
+    }
 
     public ToolMatterCannon() {
         super(AEConfig.instance().getMatterCannonBattery());
+    }
+
+    private EntityHitResult findClosestEntity(World world, EntityPlayer player, Vec3d startVec, Vec3d endVec) {
+        AxisAlignedBB searchArea = new AxisAlignedBB(
+                Math.min(startVec.x, endVec.x),
+                Math.min(startVec.y, endVec.y),
+                Math.min(startVec.z, endVec.z),
+                Math.max(startVec.x, endVec.x),
+                Math.max(startVec.y, endVec.y),
+                Math.max(startVec.z, endVec.z)
+        ).grow(16, 16, 16);
+
+        List<Entity> entities = world.getEntitiesWithinAABBExcludingEntity(player, searchArea);
+        Entity closestEntity = null;
+        double closestDistance = INITIAL_CLOSEST_DISTANCE;
+
+        for (Entity entity : entities) {
+            if (isValidTarget(player, entity)) {
+                RayTraceResult intercept = calculateEntityIntercept(startVec, endVec, entity);
+                if (intercept != null) {
+                    double distance = startVec.squareDistanceTo(intercept.hitVec);
+                    if (distance < closestDistance) {
+                        closestEntity = entity;
+                        closestDistance = distance;
+                    }
+                }
+            }
+        }
+
+        return new EntityHitResult(closestEntity, closestDistance);
+    }
+
+    private boolean isValidTarget(EntityPlayer player, Entity entity) {
+        return !entity.isDead
+                && entity != player
+                && !(entity instanceof EntityItem)
+                && entity.isEntityAlive()
+                && !entity.isRidingOrBeingRiddenBy(player);
+    }
+
+    private RayTraceResult calculateEntityIntercept(Vec3d start, Vec3d end, Entity entity) {
+        return entity.getEntityBoundingBox()
+                .grow(ENTITY_HITBOX_GROW, ENTITY_HITBOX_GROW, ENTITY_HITBOX_GROW)
+                .calculateIntercept(start, end);
     }
 
     @SideOnly(Side.CLIENT)
@@ -166,39 +222,9 @@ public class ToolMatterCannon extends AEBasePoweredItem implements IStorageCell<
     }
 
     private void shootPaintBalls(final ItemStack type, final World w, final EntityPlayer p, final Vec3d Vec3d, final Vec3d Vec3d1, final Vec3d direction, final double d0, final double d1, final double d2) {
-        final AxisAlignedBB bb = new AxisAlignedBB(Math.min(Vec3d.x, Vec3d1.x), Math.min(Vec3d.y, Vec3d1.y), Math.min(Vec3d.z, Vec3d1.z), Math
-                .max(Vec3d.x, Vec3d1.x), Math.max(Vec3d.y, Vec3d1.y), Math.max(Vec3d.z, Vec3d1.z)).grow(16, 16, 16);
-
-        Entity entity = null;
-        final List list = w.getEntitiesWithinAABBExcludingEntity(p, bb);
-        double closest = 9999999.0D;
-
-        for (int l = 0; l < list.size(); ++l) {
-            final Entity entity1 = (Entity) list.get(l);
-
-            if (!entity1.isDead && entity1 != p && !(entity1 instanceof EntityItem)) {
-                if (entity1.isEntityAlive()) {
-                    // prevent killing / flying of mounts.
-                    if (entity1.isRidingOrBeingRiddenBy(p)) {
-                        continue;
-                    }
-
-                    final float f1 = 0.3F;
-
-                    final AxisAlignedBB boundingBox = entity1.getEntityBoundingBox().grow(f1, f1, f1);
-                    final RayTraceResult RayTraceResult = boundingBox.calculateIntercept(Vec3d, Vec3d1);
-
-                    if (RayTraceResult != null) {
-                        final double nd = Vec3d.squareDistanceTo(RayTraceResult.hitVec);
-
-                        if (nd < closest) {
-                            entity = entity1;
-                            closest = nd;
-                        }
-                    }
-                }
-            }
-        }
+        EntityHitResult hitResult = findClosestEntity(w, p, Vec3d, Vec3d1);
+        Entity entity = hitResult.entity;
+        double closest = hitResult.distance;
 
         RayTraceResult pos = w.rayTraceBlocks(Vec3d, Vec3d1, false);
 
@@ -265,39 +291,9 @@ public class ToolMatterCannon extends AEBasePoweredItem implements IStorageCell<
         while (penetration > 0 && hasDestroyed) {
             hasDestroyed = false;
 
-            final AxisAlignedBB bb = new AxisAlignedBB(Math.min(Vec3d.x, Vec3d1.x), Math.min(Vec3d.y, Vec3d1.y), Math.min(Vec3d.z, Vec3d1.z), Math
-                    .max(Vec3d.x, Vec3d1.x), Math.max(Vec3d.y, Vec3d1.y), Math.max(Vec3d.z, Vec3d1.z)).grow(16, 16, 16);
-
-            Entity entity = null;
-            final List list = w.getEntitiesWithinAABBExcludingEntity(p, bb);
-            double closest = 9999999.0D;
-
-            for (int l = 0; l < list.size(); ++l) {
-                final Entity entity1 = (Entity) list.get(l);
-
-                if (!entity1.isDead && entity1 != p && !(entity1 instanceof EntityItem)) {
-                    if (entity1.isEntityAlive()) {
-                        // prevent killing / flying of mounts.
-                        if (entity1.isRidingOrBeingRiddenBy(p)) {
-                            continue;
-                        }
-
-                        final float f1 = 0.3F;
-
-                        final AxisAlignedBB boundingBox = entity1.getEntityBoundingBox().grow(f1, f1, f1);
-                        final RayTraceResult RayTraceResult = boundingBox.calculateIntercept(Vec3d, Vec3d1);
-
-                        if (RayTraceResult != null) {
-                            final double nd = Vec3d.squareDistanceTo(RayTraceResult.hitVec);
-
-                            if (nd < closest) {
-                                entity = entity1;
-                                closest = nd;
-                            }
-                        }
-                    }
-                }
-            }
+            EntityHitResult hitResult = findClosestEntity(w, p, Vec3d, Vec3d1);
+            Entity entity = hitResult.entity;
+            double closest = hitResult.distance;
 
             final Vec3d vec = new Vec3d(d0, d1, d2);
             RayTraceResult pos = w.rayTraceBlocks(Vec3d, Vec3d1, true);
