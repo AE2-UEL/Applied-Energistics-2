@@ -119,7 +119,6 @@ public class GuiInterfaceTerminal extends AEBaseGui {
         searchFieldInputs = createTextField(86, 12, ButtonToolTips.SearchFieldInputs.getLocal());
         searchFieldOutputs = createTextField(86, 12, ButtonToolTips.SearchFieldOutputs.getLocal());
         searchFieldNames = createTextField(71, 12, ButtonToolTips.SearchFieldNames.getLocal());
-        searchFieldNames.setFocused(true);
 
         guiButtonAssemblersOnly = new GuiImgButton(0, 0, Settings.ACTIONS, null);
         guiButtonHideFull = new GuiImgButton(0, 0, Settings.ACTIONS, null);
@@ -141,7 +140,6 @@ public class GuiInterfaceTerminal extends AEBaseGui {
         searchFieldInputs = createTextField(86, 12, ButtonToolTips.SearchFieldInputs.getLocal());
         searchFieldOutputs = createTextField(86, 12, ButtonToolTips.SearchFieldOutputs.getLocal());
         searchFieldNames = createTextField(71, 12, ButtonToolTips.SearchFieldNames.getLocal());
-        searchFieldNames.setFocused(true);
 
         guiButtonAssemblersOnly = new GuiImgButton(0, 0, Settings.ACTIONS, null);
         guiButtonHideFull = new GuiImgButton(0, 0, Settings.ACTIONS, null);
@@ -194,6 +192,8 @@ public class GuiInterfaceTerminal extends AEBaseGui {
         searchFieldOutputs.y = guiTop + 38;
         searchFieldNames.x = guiLeft + 32 + 99;
         searchFieldNames.y = guiTop + 38;
+
+        searchFieldNames.setFocused(true);
 
         terminalStyleBox.x = guiLeft - 18;
         terminalStyleBox.y = guiTop + 8 + jeiButtonPadding;
