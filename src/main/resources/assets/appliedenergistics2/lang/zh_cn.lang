@@ -258,7 +258,6 @@ gui.appliedenergistics2.CraftingToastDone=合成已完成！
 gui.appliedenergistics2.CraftingToastCancelled=合成已取消！
 gui.appliedenergistics2.Sticky=粘滞
 gui.appliedenergistics2.FluidTerminal=流体终端
-gui.appliedenergistics2.NoneLock=合成已解锁
 gui.appliedenergistics2.CraftingLock=合成已锁定
 gui.appliedenergistics2.LowRedstoneLock=由于缺少红石信号而锁定
 gui.appliedenergistics2.HighRedstoneLock=由于红石信号而锁定
