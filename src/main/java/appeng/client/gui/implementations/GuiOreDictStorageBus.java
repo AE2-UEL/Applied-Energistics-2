@@ -44,6 +44,18 @@ public class GuiOreDictStorageBus extends GuiUpgradeable {
     }
 
     @Override
+    public void initGui() {
+        Keyboard.enableRepeatEvents(true);
+        super.initGui();
+    }
+
+    @Override
+    public void onGuiClosed() {
+        super.onGuiClosed();
+        Keyboard.enableRepeatEvents(false);
+    }
+
+    @Override
     protected void addButtons() {
         this.searchFieldInputs = new MEGuiTextField(this.fontRenderer, this.guiLeft + 3, this.guiTop + 22, 170, 12);
         this.searchFieldInputs.setEnableBackgroundDrawing(false);

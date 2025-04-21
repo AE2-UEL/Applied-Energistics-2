@@ -56,6 +56,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.common.DimensionManager;
 import net.minecraftforge.common.util.Constants;
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
 import java.awt.*;
@@ -178,6 +179,7 @@ public class GuiInterfaceTerminal extends AEBaseGui {
 
     @Override
     public void initGui() {
+        Keyboard.enableRepeatEvents(true);
         this.rows = calculateRowsCount();
 
         super.initGui();
@@ -204,6 +206,12 @@ public class GuiInterfaceTerminal extends AEBaseGui {
 
         this.setScrollBar();
         this.repositionSlots();
+    }
+
+    @Override
+    public void onGuiClosed() {
+        super.onGuiClosed();
+        Keyboard.enableRepeatEvents(false);
     }
 
     protected void repositionSlots() {
