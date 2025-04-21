@@ -110,7 +110,7 @@ public class GuiOreDictStorageBus extends GuiUpgradeable {
     @Override
     protected void keyTyped(final char character, final int key) throws IOException {
         if (!this.checkHotbarKeys(key)) {
-            if (key == Keyboard.KEY_RETURN || key == Keyboard.KEY_NUMPADENTER) {
+            if (key == Keyboard.KEY_ESCAPE ||key == Keyboard.KEY_RETURN || key == Keyboard.KEY_NUMPADENTER) {
                 searchFieldInputs.setText(OreDictFilterMatcher.validateExp(searchFieldInputs.getText()));
                 NetworkHandler.instance().sendToServer(new PacketValueConfig("OreDictStorageBus.save", searchFieldInputs.getText()));
             }

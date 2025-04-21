@@ -64,7 +64,7 @@ public class GuiRenamer extends AEBaseGui {
 
     @Override
     protected void keyTyped(final char character, final int key) throws IOException {
-        if (key == Keyboard.KEY_RETURN || key == Keyboard.KEY_NUMPADENTER) { // Enter
+        if (key == Keyboard.KEY_ESCAPE || key == Keyboard.KEY_RETURN || key == Keyboard.KEY_NUMPADENTER) { // Enter
             try {
                 NetworkHandler.instance().sendToServer(
                         new PacketValueConfig("QuartzKnife.ReName", this.textField.getText()));
