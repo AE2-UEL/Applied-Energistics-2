@@ -69,6 +69,7 @@ import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fml.common.Optional;
+import net.minecraftforge.items.wrapper.PlayerInvWrapper;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
@@ -655,9 +656,12 @@ public abstract class AEBaseGui extends GuiContainer implements IMTModGuiContain
                 if (keyCode == this.mc.gameSettings.keyBindsHotbar[j].getKeyCode()) {
                     final List<Slot> slots = this.getInventorySlots();
                     for (final Slot s : slots) {
-                        if (s.getSlotIndex() == j && s.inventory == ((AEBaseContainer) this.inventorySlots).getPlayerInv()) {
-                            if (!s.canTakeStack(((AEBaseContainer) this.inventorySlots).getPlayerInv().player)) {
-                                return false;
+                        if (s.getSlotIndex() == j) {
+                            if (s.inventory == ((AEBaseContainer) this.inventorySlots).getPlayerInv() ||
+                                    ((s instanceof AppEngSlot app) && (app.getItemHandler() instanceof PlayerInvWrapper))) {
+                                if (!s.canTakeStack(((AEBaseContainer) this.inventorySlots).getPlayerInv().player)) {
+                                    return false;
+                                }
                             }
                         }
                     }
