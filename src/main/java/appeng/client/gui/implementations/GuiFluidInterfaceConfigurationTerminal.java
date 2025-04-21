@@ -55,6 +55,7 @@ import net.minecraft.nbt.NBTUtil;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraftforge.common.DimensionManager;
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
 import java.awt.*;
@@ -110,6 +111,7 @@ public class GuiFluidInterfaceConfigurationTerminal extends AEBaseGui implements
 
     @Override
     public void initGui() {
+        Keyboard.enableRepeatEvents(true);
         super.initGui();
 
         this.getScrollBar().setLeft(189);
@@ -130,6 +132,7 @@ public class GuiFluidInterfaceConfigurationTerminal extends AEBaseGui implements
     public void onGuiClosed() {
         partInterfaceTerminal.saveSearchStrings(this.searchFieldInputs.getText().toLowerCase());
         super.onGuiClosed();
+        Keyboard.enableRepeatEvents(false);
     }
 
     @Override

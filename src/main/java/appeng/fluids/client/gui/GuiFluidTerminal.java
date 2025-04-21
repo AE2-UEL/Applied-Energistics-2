@@ -48,6 +48,7 @@ import net.minecraft.inventory.ClickType;
 import net.minecraft.inventory.Slot;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.fml.common.Loader;
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
 import java.io.IOException;
@@ -96,6 +97,8 @@ public class GuiFluidTerminal extends AEBaseMEGui implements ISortSource, IConfi
 
     @Override
     public void initGui() {
+        Keyboard.enableRepeatEvents(true);
+
         this.mc.player.openContainer = this.inventorySlots;
         this.guiLeft = (this.width - this.xSize) / 2;
         this.guiTop = (this.height - this.ySize) / 2;
@@ -123,6 +126,12 @@ public class GuiFluidTerminal extends AEBaseMEGui implements ISortSource, IConfi
             }
         }
         this.setScrollBar();
+    }
+
+    @Override
+    public void onGuiClosed() {
+        super.onGuiClosed();
+        Keyboard.enableRepeatEvents(false);
     }
 
     @Override
