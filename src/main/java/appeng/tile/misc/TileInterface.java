@@ -352,7 +352,7 @@ public class TileInterface extends AENetworkInvTile implements IGridTickable, II
             PlayerMainInvWrapper playerInv = new PlayerMainInvWrapper(player.inventory);
             final IMaterials materials = AEApi.instance().definitions().materials();
             int missingPatternsToEncode = 0;
-            int amountPatternSlots = 8 + this.getInstalledUpgrades(Upgrades.PATTERN_EXPANSION) * 9;
+            int amountPatternSlots = 9 + this.getInstalledUpgrades(Upgrades.PATTERN_EXPANSION) * 9;
 
             for (int i = 0; i < inv.getSlots(); i++) {
                 if (target.getStackInSlot(i).getItem() instanceof ItemEncodedPattern) {
