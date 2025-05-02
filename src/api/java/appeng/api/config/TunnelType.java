@@ -42,7 +42,7 @@ public enum TunnelType {
     FE_POWER(tryPartStack(IParts::p2PTunnelFE)),
     GTEU_POWER(tryPartStack(IParts::p2PTunnelGTEU)),
     REDSTONE(tryPartStack(IParts::p2PTunnelRedstone)),
-    FLUID(tryPartStack(IParts::p2PTunnelFE)),
+    FLUID(tryPartStack(IParts::p2PTunnelFluids)),
     ITEM(tryPartStack(IParts::p2PTunnelItems)),
     LIGHT(tryPartStack(IParts::p2PTunnelLight));
 
