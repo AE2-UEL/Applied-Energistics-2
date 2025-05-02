@@ -53,7 +53,8 @@ public class AE2ELTransformer implements IClassTransformer {
 
         if ("net.minecraftforge.common.ForgeHooks".equals(transformedName)) {
             ClassReader cr = new ClassReader(basicClass);
-            ClassWriter cw = new SafeClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+            ClassWriter cw = new SafeClassWriter(cr, ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES,
+                    Launch.classLoader);
             ClassVisitor cv = new PickBlockPatch(cw);
             cr.accept(cv, ClassReader.EXPAND_FRAMES);
             return cw.toByteArray();
@@ -192,40 +193,4 @@ public class AE2ELTransformer implements IClassTransformer {
         }
 
     }
-
-    private static class SafeClassWriter extends ClassWriter {
-
-        public SafeClassWriter(int flags) {
-            super(flags);
-        }
-
-        @Override
-        protected String getCommonSuperClass(final String type1, final String type2) {
-            Class<?> c, d;
-            // clueless
-            ClassLoader classLoader = Launch.classLoader;
-            try {
-                c = Class.forName(type1.replace('/', '.'), false, classLoader);
-                d = Class.forName(type2.replace('/', '.'), false, classLoader);
-            } catch (Exception e) {
-                throw new RuntimeException(e.toString());
-            }
-            if (c.isAssignableFrom(d)) {
-                return type1;
-            }
-            if (d.isAssignableFrom(c)) {
-                return type2;
-            }
-            if (c.isInterface() || d.isInterface()) {
-                return "java/lang/Object";
-            } else {
-                do {
-                    c = c.getSuperclass();
-                } while (!c.isAssignableFrom(d));
-                return c.getName().replace('.', '/');
-            }
-        }
-
-    }
-
 }
