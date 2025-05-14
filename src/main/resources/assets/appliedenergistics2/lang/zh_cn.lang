@@ -392,23 +392,23 @@ gui.tooltips.appliedenergistics2.DecreaseByOne=物品数量-1
 gui.tooltips.appliedenergistics2.DecreaseByOneDesc=将尝试将格内物品数量-1 注：将不会维持比例
 gui.tooltips.appliedenergistics2.MaxCount=物品数量最大
 gui.tooltips.appliedenergistics2.MaxCountDesc=将把格内物品数量最大化并维持比例
-gui.tooltips.appliedenergistics2.ToggleShowFullInterfaces=显示满样板的接口
-gui.tooltips.appliedenergistics2.ToggleShowFullInterfacesOnDesc=显示所有接口
-gui.tooltips.appliedenergistics2.ToggleShowFullInterfacesOffDesc=仅显示有样板位的接口
-gui.tooltips.appliedenergistics2.HighlightInterface=高亮接口
-gui.tooltips.appliedenergistics2.PartialTransfer=将存储的物品移动至合成格中
-gui.tooltips.appliedenergistics2.MissingItem=§c缺少物品
-gui.tooltips.appliedenergistics2.CraftableItem=§9可合成物品
 gui.tooltips.appliedenergistics2.ToggleMolecularAssemblers=显示位于分子装配室的接口
 gui.tooltips.appliedenergistics2.ToggleMolecularAssemblersOffDesc=显示所有接口
 gui.tooltips.appliedenergistics2.ToggleMolecularAssemblersOnDesc=仅显示位于分子装配室的接口
+gui.tooltips.appliedenergistics2.ToggleShowFullInterfaces=显示满样板的接口
+gui.tooltips.appliedenergistics2.ToggleShowFullInterfacesOnDesc=显示所有接口
+gui.tooltips.appliedenergistics2.ToggleShowFullInterfacesOffDesc=仅显示有样板位的接口
 gui.tooltips.appliedenergistics2.ToggleShowOnlyInvalidInterface=显示含有无效编码样板的接口
 gui.tooltips.appliedenergistics2.ToggleShowOnlyInvalidInterfaceOffDesc=显示所有接口
 gui.tooltips.appliedenergistics2.ToggleShowOnlyInvalidInterfaceOnDesc=仅显示含有无效编码样板的接口
+gui.tooltips.appliedenergistics2.HighlightInterface=高亮接口
+gui.tooltips.appliedenergistics2.ConfigureInterface=配置接口
 gui.tooltips.appliedenergistics2.SearchFieldInputs=配方输入
 gui.tooltips.appliedenergistics2.SearchFieldOutputs=配方输出
 gui.tooltips.appliedenergistics2.SearchFieldNames=接口名称
-
+gui.tooltips.appliedenergistics2.PartialTransfer=将存储的物品移动至合成格中
+gui.tooltips.appliedenergistics2.MissingItem=§c缺少物品
+gui.tooltips.appliedenergistics2.CraftableItem=§9可合成物品
 
 // Units
 gui.appliedenergistics2.units.appliedenergstics=AE
