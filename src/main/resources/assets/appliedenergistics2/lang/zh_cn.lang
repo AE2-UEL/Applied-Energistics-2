@@ -471,7 +471,7 @@ theoneprobe.appliedenergistics2.p2p_output_one_input=已连接（输出端）- 1
 theoneprobe.appliedenergistics2.p2p_output_many_inputs=已连接（输出端）- §2%d§r输入
 theoneprobe.appliedenergistics2.p2p_output=已连接（输出端）
 theoneprobe.appliedenergistics2.p2p_frequency=频率：§5%1$s§r
-theoneprobe.appliedenergistics2.stored_energy=§2%1$d§к / §4%2$d§r
+theoneprobe.appliedenergistics2.stored_energy=§2%1$d§r / §4%2$d§r
 
 // Items
 item.appliedenergistics2.storage_cell_1k.name=§61k§r-ME存储元件
