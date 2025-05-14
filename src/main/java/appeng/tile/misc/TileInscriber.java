@@ -86,9 +86,9 @@ public class TileInscriber extends AENetworkPowerTile implements IGridTickable, 
     private boolean smash;
     private int finalStep;
     private long clientStart;
-    private final AppEngInternalInventory topItemHandler = new AppEngInternalInventory(this, 1, 1);
-    private final AppEngInternalInventory bottomItemHandler = new AppEngInternalInventory(this, 1, 1);
-    private final AppEngInternalInventory sideItemHandler = new AppEngInternalInventory(this, 2, 1);
+    private final AppEngInternalInventory topItemHandler = new AppEngInternalInventory(this, 1, 64);
+    private final AppEngInternalInventory bottomItemHandler = new AppEngInternalInventory(this, 1, 64);
+    private final AppEngInternalInventory sideItemHandler = new AppEngInternalInventory(this, 2, 64);
 
     private final IItemHandler topItemHandlerExtern;
     private final IItemHandler bottomItemHandlerExtern;
@@ -257,27 +257,15 @@ public class TileInscriber extends AENetworkPowerTile implements IGridTickable, 
     }
 
     @Nullable
-    private IInscriberRecipe getTask(final ItemStack input, final ItemStack plateA, final ItemStack plateB) {
-        if (input.isEmpty() || input.getCount() > 1) {
-            return null;
-        }
-
-        if (!plateA.isEmpty() && plateA.getCount() > 1) {
-            return null;
-        }
-
-        if (!plateB.isEmpty() && plateB.getCount() > 1) {
-            return null;
-        }
+    private IInscriberRecipe getTask(ItemStack input, ItemStack plateA, ItemStack plateB) {
+        if (input.isEmpty()) return null;
 
         final IComparableDefinition namePress = AEApi.instance().definitions().materials().namePress();
         final boolean isNameA = namePress.isSameAs(plateA);
         final boolean isNameB = namePress.isSameAs(plateB);
 
-        if ((isNameA && isNameB) || isNameA && plateB.isEmpty()) {
-            return this.makeNamePressRecipe(input, plateA, plateB);
-        } else if (plateA.isEmpty() && isNameB) {
-            return this.makeNamePressRecipe(input, plateB, plateA);
+        if ((isNameA && plateA.getCount() > 1) || (isNameB && plateB.getCount() > 1)) {
+            return null;
         }
 
         for (final IInscriberRecipe recipe : AEApi.instance().registries().inscriber().getRecipes()) {
@@ -319,10 +307,10 @@ public class TileInscriber extends AENetworkPowerTile implements IGridTickable, 
                     if (this.sideItemHandler.insertItem(1, outputCopy, false).isEmpty()) {
                         this.setProcessingTime(0);
                         if (out.getProcessType() == InscriberProcessType.PRESS) {
-                            this.topItemHandler.setStackInSlot(0, ItemStack.EMPTY);
-                            this.bottomItemHandler.setStackInSlot(0, ItemStack.EMPTY);
+                            this.topItemHandler.extractItem(0, 1, false);
+                            this.bottomItemHandler.extractItem(0, 1, false);
                         }
-                        this.sideItemHandler.setStackInSlot(0, ItemStack.EMPTY);
+                        this.sideItemHandler.extractItem(0, 1, false);
                     }
                 }
                 this.saveChanges();
@@ -504,24 +492,17 @@ public class TileInscriber extends AENetworkPowerTile implements IGridTickable, 
         @Override
         public boolean allowInsert(IItemHandler inv, int slot, ItemStack stack) {
             // output slot
-            if (slot == 1) {
-                return false;
-            }
-
-            if (TileInscriber.this.isSmash()) {
-                return false;
-            }
+            if (slot == 1) return false;
+            if (TileInscriber.this.isSmash()) return false;
 
             if (inv == TileInscriber.this.topItemHandler || inv == TileInscriber.this.bottomItemHandler) {
                 if (AEApi.instance().definitions().materials().namePress().isSameAs(stack)) {
-                    return true;
+                    ItemStack existing = inv.getStackInSlot(slot);
+                    return existing.isEmpty() ||
+                            (existing.getCount() < 1 &&
+                                    ItemStack.areItemsEqual(existing, stack));
                 }
-                for (final ItemStack optionals : AEApi.instance().registries().inscriber().getOptionals()) {
-                    if (Platform.itemComparisons().isSameItem(stack, optionals)) {
-                        return true;
-                    }
-                }
-                return false;
+                return true;
             }
             return true;
         }
