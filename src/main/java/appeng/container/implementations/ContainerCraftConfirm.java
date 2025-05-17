@@ -24,10 +24,7 @@ import appeng.api.config.Actionable;
 import appeng.api.config.SecurityPermissions;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
-import appeng.api.networking.crafting.ICraftingCPU;
-import appeng.api.networking.crafting.ICraftingGrid;
-import appeng.api.networking.crafting.ICraftingJob;
-import appeng.api.networking.crafting.ICraftingLink;
+import appeng.api.networking.crafting.*;
 import appeng.api.networking.security.IActionHost;
 import appeng.api.networking.security.IActionSource;
 import appeng.api.networking.storage.IStorageGrid;
@@ -196,48 +193,87 @@ public class ContainerCraftConfirm extends AEBaseContainer {
                     final PacketMEInventoryUpdate a = new PacketMEInventoryUpdate((byte) 0);
                     final PacketMEInventoryUpdate b = new PacketMEInventoryUpdate((byte) 1);
                     final PacketMEInventoryUpdate c = this.result.isSimulation() ? new PacketMEInventoryUpdate((byte) 2) : null;
+                    final PacketMEInventoryUpdate d = new PacketMEInventoryUpdate((byte) 3);
+                    final PacketMEInventoryUpdate e = new PacketMEInventoryUpdate((byte) 4);
 
                     final IItemList<IAEItemStack> plan = AEApi.instance().storage().getStorageChannel(IItemStorageChannel.class).createList();
                     this.result.populatePlan(plan);
 
                     this.setUsedBytes(this.result.getByteTotal());
+                    final ICraftingPatternDetails pattern = this.result.getPattern();
+
+                    final IStorageGrid sg = grid.getCache(IStorageGrid.class);
+                    final IMEMonitor<IAEItemStack> items = sg.getInventory(AEApi.instance().storage().getStorageChannel(IItemStorageChannel.class));
 
                     for (final IAEItemStack out : plan) {
+                        final long requested = out.getStackSize();
 
                         IAEItemStack o = out.copy();
                         o.reset();
-                        o.setStackSize(out.getStackSize());
+                        o.setStackSize(requested);
+
+                        IAEItemStack totalAvailable = items.getStorageList().findPrecise(out);
+                        long maxAvailable = totalAvailable != null ? totalAvailable.getStackSize() : 0;
+
+                        IAEItemStack simulatedExtract = items.extractItems(o, Actionable.SIMULATE, this.getActionSource());
+                        long available = simulatedExtract != null ? simulatedExtract.getStackSize() : 0;
+
+                        if (available > 0) {
+                            a.appendItem(simulatedExtract);
+                        }
 
                         final IAEItemStack p = out.copy();
                         p.reset();
                         p.setStackSize(out.getCountRequestable());
-
-                        final IStorageGrid sg = grid.getCache(IStorageGrid.class);
-                        final IMEMonitor<IAEItemStack> items = sg.getInventory(AEApi.instance().storage().getStorageChannel(IItemStorageChannel.class));
-
-                        IAEItemStack m = null;
-                        if (c != null && this.result.isSimulation()) {
-                            m = o.copy();
-                            o = items.extractItems(o, Actionable.SIMULATE, this.getActionSource());
-
-                            if (o == null) {
-                                o = m.copy();
-                                o.setStackSize(0);
-                            }
-
-                            m.setStackSize(m.getStackSize() - o.getStackSize());
-                        }
-
-                        if (o.getStackSize() > 0) {
-                            a.appendItem(o);
-                        }
-
                         if (p.getStackSize() > 0) {
                             b.appendItem(p);
                         }
 
-                        if (c != null && m != null && m.getStackSize() > 0) {
-                            c.appendItem(m);
+                        IAEItemStack m = null;
+                        if (c != null && this.result.isSimulation()) {
+                            m = o.copy();
+                            o = simulatedExtract != null ? simulatedExtract : o.copy().setStackSize(0);
+                            m.setStackSize(m.getStackSize() - o.getStackSize());
+                            if (m.getStackSize() > 0) {
+                                c.appendItem(m);
+                            }
+                        }
+
+                        if (d != null && pattern != null) {
+                            long craftPerCycle = 0;
+                            for (IAEItemStack output : pattern.getOutputs()) {
+                                if (output.isSameType(out)) {
+                                    craftPerCycle += output.getStackSize();
+                                }
+                            }
+
+                            if (craftPerCycle > 0) {
+                                long rounds = (p.getStackSize() + craftPerCycle - 1) / craftPerCycle;
+                                if (rounds > 0) {
+                                    IAEItemStack roundItem = out.copy();
+                                    roundItem.setStackSize(rounds);
+                                    d.appendItem(roundItem);
+                                }
+                            }
+                        }
+
+                        if (maxAvailable <= 0) {
+                            continue;
+                        }
+                        if (requested > maxAvailable) {
+                            continue;
+                        }
+
+                        double ratio = 0.0;
+                        if (requested > 0) {
+                        ratio = (double) available / maxAvailable;
+                            ratio = Math.round(ratio * 10000.0) / 10000.0;
+                        }
+
+                        if (ratio <= 1.0 && out.getCountRequestable() == 0) {
+                            IAEItemStack ratioStack = out.copy();
+                            ratioStack.setStackSize((long) (ratio * 10000));
+                            e.appendItem(ratioStack);
                         }
                     }
 
@@ -245,9 +281,9 @@ public class ContainerCraftConfirm extends AEBaseContainer {
                         if (g instanceof EntityPlayer) {
                             NetworkHandler.instance().sendTo(a, (EntityPlayerMP) g);
                             NetworkHandler.instance().sendTo(b, (EntityPlayerMP) g);
-                            if (c != null) {
-                                NetworkHandler.instance().sendTo(c, (EntityPlayerMP) g);
-                            }
+                            if (c != null) NetworkHandler.instance().sendTo(c, (EntityPlayerMP) g);
+                            if (d != null) NetworkHandler.instance().sendTo(d, (EntityPlayerMP) g);
+                            NetworkHandler.instance().sendTo(e, (EntityPlayerMP) g);
                         }
                     }
                 } catch (final IOException e) {

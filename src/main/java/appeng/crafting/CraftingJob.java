@@ -41,6 +41,7 @@ import appeng.me.cache.GridStorageCache;
 import com.google.common.base.Stopwatch;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
@@ -335,5 +336,13 @@ public class CraftingJob implements Runnable, ICraftingJob {
     private static class TwoIntegers {
         private final long perOp = 0;
         private final long times = 0;
+    }
+
+    @Override
+    public @Nullable ICraftingPatternDetails getPattern() {
+        if (this.tree != null) {
+            return this.tree.getPattern();
+        }
+        return null;
     }
 }

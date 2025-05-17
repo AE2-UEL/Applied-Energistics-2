@@ -283,4 +283,8 @@ public class CraftingTreeProcess {
             entry.getKey().getPlan(plan);
         }
     }
+
+    public ICraftingPatternDetails getPatternDetails() {
+        return this.details;
+    }
 }

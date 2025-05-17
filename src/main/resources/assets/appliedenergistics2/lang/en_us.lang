@@ -266,6 +266,8 @@ gui.appliedenergistics2.ResultLock=Waiting for pattern output to unlock
 gui.appliedenergistics2.UntilPulseUnlock=Waiting for redstone pulse to unlock
 gui.appliedenergistics2.CanBeEnchanted=Can be enchanted
 gui.appliedenergistics2.IncreasedEnergyUseFromEnchants=Enchants increase energy use
+gui.appliedenergistics2.PatternExecutionCount=Steps
+gui.appliedenergistics2.MaterialUsagePercentage=Used
 gui.appliedenergistics2.Deprecated=Deprecated
 
 // GUI Tooltips

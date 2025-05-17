@@ -26,6 +26,7 @@ package appeng.api.networking.crafting;
 
 import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IItemList;
+import org.jetbrains.annotations.Nullable;
 
 
 public interface ICraftingJob
@@ -54,4 +55,13 @@ public interface ICraftingJob
 	 * @return the final output of the job.
 	 */
 	IAEItemStack getOutput();
+
+        /**
+         * Retrieves the crafting pattern details associated with this crafting job.
+         * 
+         * @return The pattern details used for this crafting operation, 
+         *         or null if the job isn't bound to a specific pattern.
+         */
+        @Nullable
+        ICraftingPatternDetails getPattern();
 }

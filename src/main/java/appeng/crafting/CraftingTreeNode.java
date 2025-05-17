@@ -38,6 +38,7 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -395,5 +396,21 @@ public class CraftingTreeNode {
 
     int getSlot() {
         return this.slot;
+    }
+
+    @Nullable
+    public ICraftingPatternDetails getPattern() {
+        if (!this.nodes.isEmpty()) {
+            return this.nodes.get(0).getPatternDetails();
+        }
+        return null;
+    }
+
+    public List<ICraftingPatternDetails> getPatterns() {
+        List<ICraftingPatternDetails> patterns = new ArrayList<>();
+        for (CraftingTreeProcess process : this.nodes) {
+            patterns.add(process.getPatternDetails());
+        }
+        return patterns;
     }
 }
