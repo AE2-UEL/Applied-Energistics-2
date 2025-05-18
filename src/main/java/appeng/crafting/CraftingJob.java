@@ -42,7 +42,7 @@ import com.google.common.base.Stopwatch;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.world.World;
 
-import java.util.HashMap;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 
@@ -71,6 +71,7 @@ public class CraftingJob implements Runnable, ICraftingJob {
     private boolean done = false;
     private int time;
     private int incTime;
+    private CraftingTreeNode rootNode;
 
     private World wrapWorld(final World w) {
         return w;
@@ -80,14 +81,14 @@ public class CraftingJob implements Runnable, ICraftingJob {
         this.world = this.wrapWorld(w);
         this.output = what.copy();
         this.actionSrc = actionSrc;
-
         this.callback = callback;
 
         this.cc = grid.getCache(ICraftingGrid.class);
         final GridStorageCache sg = grid.getCache(IStorageGrid.class);
         this.original = new MECraftingInventory(sg.getInventory(AEApi.instance().storage().getStorageChannel(IItemStorageChannel.class)).getStorageList());
 
-        this.setTree(this.getCraftingTree(cc, what));
+        this.rootNode = this.getCraftingTree(cc, what);
+        this.setTree(this.rootNode);
         this.availableCheck = null;
     }
 
@@ -335,5 +336,12 @@ public class CraftingJob implements Runnable, ICraftingJob {
     private static class TwoIntegers {
         private final long perOp = 0;
         private final long times = 0;
+    }
+
+    public long getTotalCraftsForPrimaryOutput(IAEItemStack material) {
+        if (material == null) {
+            throw new IllegalArgumentException("Material cannot be null");
+        }
+        return this.rootNode.getTotalCraftsForPrimaryOutput(material);
     }
 }
