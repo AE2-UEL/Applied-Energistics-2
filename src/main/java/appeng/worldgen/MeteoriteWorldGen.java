@@ -20,112 +20,130 @@ package appeng.worldgen;
 
 
 import appeng.api.features.IWorldGen.WorldGenType;
-import appeng.core.AEConfig;
 import appeng.core.features.registries.WorldGenRegistry;
-import appeng.core.worlddata.WorldData;
-import appeng.hooks.TickHandler;
-import appeng.util.IWorldCallable;
-import appeng.util.Platform;
-import appeng.worldgen.meteorite.ChunkOnly;
-import net.minecraft.nbt.NBTTagCompound;
+import appeng.worldgen.meteorite.MapGenMeteorite;
+import appeng.worldgen.meteorite.MeteoriteStructurePiece;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ReferenceArraySet;
+import net.minecraft.entity.item.EntityItem;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.gen.IChunkGenerator;
+import net.minecraft.world.gen.structure.MapGenStructureIO;
+import net.minecraft.world.gen.structure.StructureBoundingBox;
+import net.minecraftforge.event.entity.EntityJoinWorldEvent;
+import net.minecraftforge.event.terraingen.InitMapGenEvent;
+import net.minecraftforge.event.world.ChunkDataEvent;
+import net.minecraftforge.event.world.ChunkEvent;
+import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.fml.common.IWorldGenerator;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 import java.util.Random;
+import java.util.Set;
 
 
 public final class MeteoriteWorldGen implements IWorldGenerator {
+    public final Set<StructureBoundingBox> captureDropAreas = new ReferenceArraySet<>();
+    private final Int2ObjectMap<MapGenMeteorite> meteoriteGenerators = new Int2ObjectOpenHashMap<>();
+
+    /**
+     * This is where we actually generate the meteor.
+     */
     @Override
-    public void generate(final Random r, final int chunkX, final int chunkZ, final World w, final IChunkGenerator chunkGenerator, final IChunkProvider chunkProvider) {
-        if (WorldGenRegistry.INSTANCE.isWorldGenEnabled(WorldGenType.METEORITES, w)) {
-            final int x = r.nextInt(16) + (chunkX << 4);
-            final int z = r.nextInt(16) + (chunkZ << 4);
-            final int depth = AEConfig.instance().getMeteoriteMaximumSpawnHeight() + r.nextInt(20);
-
-            TickHandler.INSTANCE.addCallable(w, new MeteoriteSpawn(x, depth, z));
-        } else {
-            WorldData.instance().compassData().service().updateArea(w, chunkX, chunkZ);
+    public void generate(Random random, int chunkX, int chunkZ, World world, IChunkGenerator chunkGenerator, IChunkProvider chunkProvider) {
+        var chunkPos = new ChunkPos(chunkX, chunkZ);
+        if (WorldGenRegistry.INSTANCE.isWorldGenEnabled(WorldGenType.METEORITES, world)) {
+            getGenerator(world).generateStructure(world, world.rand, chunkPos);
         }
     }
 
-    private boolean tryMeteorite(final World w, int depth, final int x, final int z) {
-        for (int tries = 0; tries < 20; tries++) {
-            final MeteoritePlacer mp = new MeteoritePlacer();
+    public void registerStructure() {
+        MapGenStructureIO.registerStructure(MapGenMeteorite.Start.class, MapGenMeteorite.ID);
+        MapGenStructureIO.registerStructureComponent(MeteoriteStructurePiece.class, MeteoriteStructurePiece.ID);
+    }
 
-            if (mp.spawnMeteorite(new ChunkOnly(w, x >> 4, z >> 4), x, depth, z)) {
-                final int px = x >> 4;
-                final int pz = z >> 4;
+    public MapGenMeteorite getGenerator(World world) {
+        var key = world.provider.getDimension();
+        var generator = meteoriteGenerators.get(key);
+        if (generator == null) {
+            generator = new MapGenMeteorite();
+            var modifiedGen = net.minecraftforge.event.terraingen.TerrainGen
+                    .getModdedMapGen(generator, InitMapGenEvent.EventType.CUSTOM);
+            if (modifiedGen instanceof MapGenMeteorite newGen) {
+                generator = newGen;
+            }
+            meteoriteGenerators.put(key, generator);
+        }
+        return generator;
+    }
 
-                for (int cx = px - 6; cx < px + 6; cx++) {
-                    for (int cz = pz - 6; cz < pz + 6; cz++) {
-                        if (w.getChunkProvider().getLoadedChunk(cx, cz) != null) {
-                            if (px == cx && pz == cz) {
-                                continue;
-                            }
+    @SubscribeEvent
+    public void detachMeteoriteGen(WorldEvent.Unload event) {
+        var world = event.getWorld();
+        if (world.isRemote) {
+            return;
+        }
+        meteoriteGenerators.remove(world.provider.getDimension());
+    }
 
-                            if (WorldData.instance().spawnData().hasGenerated(w.provider.getDimension(), cx, cz)) {
-                                final MeteoritePlacer mp2 = new MeteoritePlacer();
-                                mp2.spawnMeteorite(new ChunkOnly(w, cx, cz), mp.getSettings());
-                            }
-                        }
-                    }
+    /**
+     * Hook to add known chunks to the meteorite generator. Because there is no Forge provided hook into
+     * {@link IChunkGenerator#generateChunk(int, int)}, the next best place to call this is for an unpopulated chunk
+     * load.
+     *
+     * @see net.minecraft.world.gen.ChunkProviderServer#provideChunk(int, int) hook call location
+     */
+    @SubscribeEvent
+    public void onChunkPostGenerated(ChunkEvent.Load event) {
+        var chunk = event.getChunk();
+        var world = event.getWorld();
+        // We only want to process chunks that haven't been populated, or in other words, have just been generated.
+        if (chunk.getWorld().isRemote || chunk.isTerrainPopulated()) {
+            return;
+        }
+        if (!WorldGenRegistry.INSTANCE.isWorldGenEnabled(WorldGenType.METEORITES, world)) {
+            return;
+        }
+        // ChunkPrimer isn't used in MapGenStructure, so should be safe to pass null.
+        // noinspection DataFlowIssue
+        getGenerator(world).generate(world, chunk.x, chunk.z, null);
+    }
+
+    /**
+     * Hook to add known chunks to the meteorite generator. Because there is no Forge provided hook into
+     * {@link IChunkGenerator#recreateStructures(Chunk, int, int)}, the next best place to call this is on loading chunk
+     * data.
+     *
+     * @see net.minecraftforge.common.chunkio.ChunkIOProvider#syncCallback() hook call location
+     */
+    @SubscribeEvent
+    public void onChunkRecreateStructures(ChunkDataEvent.Load event) {
+        var chunk = event.getChunk();
+        var world = event.getWorld();
+        if (!WorldGenRegistry.INSTANCE.isWorldGenEnabled(WorldGenType.METEORITES, world)) {
+            return;
+        }
+        // ChunkPrimer isn't used in MapGenStructure, so should be safe to pass null.
+        // noinspection DataFlowIssue
+        getGenerator(world).generate(world, chunk.x, chunk.z, null);
+    }
+
+    /**
+     * Cleans up items spawned from blocks in known bounding boxes.
+     */
+    @SubscribeEvent
+    public void onItemDrop(EntityJoinWorldEvent event) {
+        if (!event.getWorld().isRemote && event.getEntity() instanceof EntityItem item) {
+            for (var area : captureDropAreas) {
+                if (area.isVecInside(item.getPosition())) {
+                    event.setCanceled(true);
+                    return;
                 }
-
-                return true;
             }
-
-            depth -= 15;
-            if (depth < 40) {
-                return false;
-            }
-        }
-
-        return false;
-    }
-
-    private Iterable<NBTTagCompound> getNearByMeteorites(final World w, final int chunkX, final int chunkZ) {
-        return WorldData.instance().spawnData().getNearByMeteorites(w.provider.getDimension(), chunkX, chunkZ);
-    }
-
-    private class MeteoriteSpawn implements IWorldCallable<Object> {
-
-        private final int x;
-        private final int z;
-        private final int depth;
-
-        public MeteoriteSpawn(final int x, final int depth, final int z) {
-            this.x = x;
-            this.z = z;
-            this.depth = depth;
-        }
-
-        @Override
-        public Object call(final World world) throws Exception {
-            final int chunkX = this.x >> 4;
-            final int chunkZ = this.z >> 4;
-
-            double minSqDist = Double.MAX_VALUE;
-
-            // near by meteorites!
-            for (final NBTTagCompound data : MeteoriteWorldGen.this.getNearByMeteorites(world, chunkX, chunkZ)) {
-                final MeteoritePlacer mp = new MeteoritePlacer();
-                mp.spawnMeteorite(new ChunkOnly(world, chunkX, chunkZ), data);
-
-                minSqDist = Math.min(minSqDist, mp.getSqDistance(this.x, this.z));
-            }
-
-            final boolean isCluster = (minSqDist < 30 * 30) && Platform.getRandomFloat() < AEConfig.instance().getMeteoriteClusterChance();
-
-            if (minSqDist > AEConfig.instance().getMinMeteoriteDistanceSq() || isCluster) {
-                MeteoriteWorldGen.this.tryMeteorite(world, this.depth, this.x, this.z);
-            }
-
-            WorldData.instance().spawnData().setGenerated(world.provider.getDimension(), chunkX, chunkZ);
-            WorldData.instance().compassData().service().updateArea(world, chunkX, chunkZ);
-
-            return null;
         }
     }
 }

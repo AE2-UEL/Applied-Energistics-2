@@ -45,6 +45,9 @@ public enum PlayerMessages {
     InterfaceInOtherDimParam,
     InterfaceInOtherDim,
     InterfaceHighlighted,
+
+    CompassTestSuccess,
+    CompassTestFailure
     ;
 
     public ITextComponent get(Object... params) {

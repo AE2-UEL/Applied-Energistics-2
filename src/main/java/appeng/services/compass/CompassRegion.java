@@ -1,168 +1,106 @@
-/*
- * This file is part of Applied Energistics 2.
- * Copyright (c) 2013 - 2015, AlgorithmX2, All rights reserved.
- *
- * Applied Energistics 2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * Applied Energistics 2 is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with Applied Energistics 2.  If not, see <http://www.gnu.org/licenses/lgpl>.
- */
-
 package appeng.services.compass;
 
+import appeng.core.AELog;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.math.ChunkPos;
+import net.minecraft.world.WorldServer;
+import net.minecraft.world.storage.MapStorage;
+import net.minecraft.world.storage.WorldSavedData;
+import org.jetbrains.annotations.NotNull;
 
-import appeng.core.worlddata.MeteorDataNameEncoder;
-import com.google.common.base.Preconditions;
+import java.util.BitSet;
+import java.util.Objects;
 
-import javax.annotation.Nonnull;
-import java.io.File;
-import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
+public class CompassRegion extends WorldSavedData {
+    /**
+     * The number of chunks that get saved in a region on each axis.
+     */
+    private static final int CHUNKS_PER_REGION = 1024;
+    // The number of bits needed to represent the chunk pos as an index in the bitmap.
+    private static final int BITS_PER_POS = Integer.numberOfTrailingZeros(CHUNKS_PER_REGION);
 
+    private static final int BITMAP_LENGTH = CHUNKS_PER_REGION * CHUNKS_PER_REGION;
+    private static final String NBT_KEY = "data";
 
-public final class CompassRegion {
-    private final int lowX;
-    private final int lowZ;
-    private final int world;
-    private final File worldCompassFolder;
-    private final MeteorDataNameEncoder encoder;
+    private BitSet data = new BitSet(BITMAP_LENGTH);
 
-    private boolean hasFile = false;
-    private RandomAccessFile raf = null;
-    private ByteBuffer buffer;
-
-    public CompassRegion(final int cx, final int cz, final int worldID, @Nonnull final File worldCompassFolder) {
-        Preconditions.checkNotNull(worldCompassFolder);
-        Preconditions.checkArgument(worldCompassFolder.isDirectory());
-
-        this.world = worldID;
-        this.worldCompassFolder = worldCompassFolder;
-        this.encoder = new MeteorDataNameEncoder(0);
-
-        final int region_x = cx >> 10;
-        final int region_z = cz >> 10;
-
-        this.lowX = region_x << 10;
-        this.lowZ = region_z << 10;
-
-        this.openFile(false);
+    public CompassRegion(String name) {
+        super(name);
     }
 
-    void close() {
-        try {
-            if (this.hasFile) {
-                this.buffer = null;
-                this.raf.close();
-                this.raf = null;
-                this.hasFile = false;
-            }
-        } catch (final Throwable t) {
-            throw new CompassException(t);
+    /**
+     * Gets the name of the save data for a region that has the given coordinates.
+     */
+    private static String getRegionSaveName(int regionX, int regionZ) {
+        return "ae2_compass_" + regionX + "_" + regionZ;
+    }
+
+    /**
+     * Retrieve the compass region that serves the given chunk position.
+     */
+    public static CompassRegion get(WorldServer world, ChunkPos chunkPos) {
+        Objects.requireNonNull(world, "world");
+        Objects.requireNonNull(chunkPos, "chunkPos");
+
+        return get(world, chunkPos.x, chunkPos.z);
+    }
+
+    public static CompassRegion get(WorldServer world, int chunkX, int chunkZ) {
+        Objects.requireNonNull(world, "world");
+
+        int regionX = (chunkX >> BITS_PER_POS) << BITS_PER_POS;
+        int regionZ = (chunkZ >> BITS_PER_POS) << BITS_PER_POS;
+
+        return getByRegion(world, regionX, regionZ);
+    }
+
+    private static CompassRegion getByRegion(WorldServer world, int regionX, int regionZ) {
+        var name = getRegionSaveName(regionX, regionZ);
+
+        MapStorage worldStorage = world.getPerWorldStorage();
+        var compassRegion = (CompassRegion) worldStorage.getOrLoadData(CompassRegion.class, name);
+        if (compassRegion == null) {
+            compassRegion = new CompassRegion(name);
+            worldStorage.setData(name, compassRegion);
         }
+        return compassRegion;
     }
 
-    boolean hasBeacon(int cx, int cz) {
-        if (this.hasFile) {
-            cx &= 0x3FF;
-            cz &= 0x3FF;
-
-            final int val = this.read(cx, cz);
-            return val != 0;
-        }
-
-        return false;
-    }
-
-    void setHasBeacon(int cx, int cz, final int cdy, final boolean hasBeacon) {
-        cx &= 0x3FF;
-        cz &= 0x3FF;
-
-        this.openFile(hasBeacon);
-
-        if (this.hasFile) {
-            int val = this.read(cx, cz);
-            final int originalVal = val;
-
-            if (hasBeacon) {
-                val |= 1 << cdy;
+    @Override
+    public void readFromNBT(@NotNull NBTTagCompound nbt) {
+        for (String key : nbt.getKeySet()) {
+            if (key.equals(NBT_KEY)) {
+                data = BitSet.valueOf(nbt.getByteArray(key));
             } else {
-                val &= ~(1 << cdy);
-            }
-
-            if (originalVal != val) {
-                this.write(cx, cz, val);
+                AELog.warn("Compass region contains unknown NBT tag %s", key);
             }
         }
     }
 
     @Override
-    protected void finalize() throws Throwable {
-        try {
-            if (this.raf != null) {
-                this.raf.close();
-            }
-        } finally {
-            super.finalize();
-        }
-
+    @NotNull
+    public NBTTagCompound writeToNBT(@NotNull NBTTagCompound compound) {
+        compound.setByteArray(NBT_KEY, data.toByteArray());
+        return compound;
     }
 
-    private void openFile(final boolean create) {
-        if (this.hasFile) {
-            return;
-        }
+    boolean hasCompassTarget(int cx, int cz) {
+        var bitmapIndex = getBitmapIndex(cx, cz);
+        return data.get(bitmapIndex);
+    }
 
-        final File file = this.getFile();
-        if (create || this.isFileExistent(file)) {
-            try {
-                this.raf = new RandomAccessFile(file, "rw");
-                final FileChannel fc = this.raf.getChannel();
-                this.buffer = fc.map(FileChannel.MapMode.READ_WRITE, 0, 0x400 * 0x400);// fc.size() );
-                this.hasFile = true;
-            } catch (final Throwable t) {
-                throw new CompassException(t);
-            }
+    void setHasCompassTarget(int cx, int cz, boolean hasTarget) {
+        var bitmapIndex = getBitmapIndex(cx, cz);
+        var found = data.get(bitmapIndex);
+        if (found != hasTarget) {
+            data.set(bitmapIndex, hasTarget);
+            markDirty();
         }
     }
 
-    private File getFile() {
-        final String fileName = this.encoder.encode(this.world, this.lowX, this.lowZ);
-
-        return new File(this.worldCompassFolder, fileName);
-    }
-
-    private boolean isFileExistent(final File file) {
-        return file.exists() && file.isFile();
-    }
-
-    private int read(final int cx, final int cz) {
-        try {
-            return this.buffer.get(cx + cz * 0x400);
-            // raf.seek( cx + cz * 0x400 );
-            // return raf.readByte();
-        } catch (final IndexOutOfBoundsException outOfBounds) {
-            return 0;
-        } catch (final Throwable t) {
-            throw new CompassException(t);
-        }
-    }
-
-    private void write(final int cx, final int cz, final int val) {
-        try {
-            this.buffer.put(cx + cz * 0x400, (byte) val);
-            // raf.seek( cx + cz * 0x400 );
-            // raf.writeByte( val );
-        } catch (final Throwable t) {
-            throw new CompassException(t);
-        }
+    private static int getBitmapIndex(int cx, int cz) {
+        cx &= CHUNKS_PER_REGION - 1;
+        cz &= CHUNKS_PER_REGION - 1;
+        return cx | (cz << BITS_PER_POS);
     }
 }

@@ -1,0 +1,170 @@
+{
+    "pools": [
+        {
+            "name": "presses",
+            "conditions": [
+                {
+                    "condition": "appliedenergistics2:feature_enabled",
+                    "features": [
+                        "PRESSES",
+                        "SPAWN_PRESSES_IN_METEORITES"
+                    ]
+                }
+            ],
+            "rolls": {
+                "min": 1,
+                "max": 4
+            },
+            "entries": [
+                {
+                    "entryName": "Calculation Press",
+                    "conditions": [
+                        {
+                            "condition": "appliedenergistics2:check_tally",
+                            "id": "appliedenergistics2:material:13",
+                            "max": 1
+                        }
+                    ],
+                    "type": "item",
+                    "name": "appliedenergistics2:material",
+                    "functions": [
+                        {
+                            "function": "set_data",
+                            "data": 13
+                        },
+                        {
+                            "function": "appliedenergistics2:tally"
+                        }
+                    ]
+                },
+                {
+                    "entryName": "Engineering Press",
+                    "conditions": [
+                        {
+                            "condition": "appliedenergistics2:check_tally",
+                            "id": "appliedenergistics2:material:14",
+                            "max": 1
+                        }
+                    ],
+                    "type": "item",
+                    "name": "appliedenergistics2:material",
+                    "functions": [
+                        {
+                            "function": "set_data",
+                            "data": 14
+                        },
+                        {
+                            "function": "appliedenergistics2:tally"
+                        }
+                    ]
+                },
+                {
+                    "entryName": "Logic Press",
+                    "conditions": [
+                        {
+                            "condition": "appliedenergistics2:check_tally",
+                            "id": "appliedenergistics2:material:15",
+                            "max": 1
+                        }
+                    ],
+                    "type": "item",
+                    "name": "appliedenergistics2:material",
+                    "functions": [
+                        {
+                            "function": "set_data",
+                            "data": 15
+                        },
+                        {
+                            "function": "appliedenergistics2:tally"
+                        }
+                    ]
+                },
+                {
+                    "entryName": "Silicon Press",
+                    "conditions": [
+                        {
+                            "condition": "appliedenergistics2:check_tally",
+                            "id": "appliedenergistics2:material:19",
+                            "max": 1
+                        }
+                    ],
+                    "type": "item",
+                    "name": "appliedenergistics2:material",
+                    "functions": [
+                        {
+                            "function": "set_data",
+                            "data": 19
+                        },
+                        {
+                            "function": "appliedenergistics2:tally"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "junk",
+            "conditions": [
+                {
+                    "condition": "random_chance",
+                    "chance": 0.6666
+                }
+            ],
+            "rolls": {
+                "min": 1,
+                "max": 3
+            },
+            "entries": [
+                {
+                    "entryName": "Nuggets",
+                    "type": "item",
+                    "name": "minecraft:air",
+                    "functions": [
+                        {
+                            "function": "appliedenergistics2:to_random_ore",
+                            "ores": [
+                                "nuggetIron",
+                                "nuggetGold",
+                                "nuggetCopper",
+                                "nuggetTin",
+                                "nuggetSilver",
+                                "nuggetLead",
+                                "nuggetPlatinum",
+                                "nuggetNickel",
+                                "nuggetAluminium",
+                                "nuggetElectrum"
+                            ]
+                        },
+                        {
+                            "function": "set_count",
+                            "count": {
+                                "min": 1,
+                                "max": 12
+                            }
+                        }
+                    ]
+                },
+                {
+                    "entryName": "Sky Stone",
+                    "conditions": [
+                        {
+                            "condition": "appliedenergistics2:feature_enabled",
+                            "features": "SKY_STONE"
+                        }
+                    ],
+                    "type": "item",
+                    "name": "appliedenergistics2:sky_stone_block",
+                    "functions": [
+                        {
+                            "function": "set_count",
+                            "count": {
+                                "min": 1,
+                                "max": 12
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

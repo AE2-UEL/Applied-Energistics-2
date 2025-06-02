@@ -93,6 +93,8 @@ chat.appliedenergistics2.isNowUnlocked=Monitor is now Unlocked.
 chat.appliedenergistics2.InterfaceInOtherDimParam=Interface located at dimension: %d [ %s ] and cannot be highlighted
 chat.appliedenergistics2.InterfaceInOtherDim=Interface is located in another dimension and cannot be highlighted
 chat.appliedenergistics2.InterfaceHighlighted=The interface is now highlighted at X: %s Y: %s Z: %s
+chat.appliedenergistics2.CompassTestSuccess=Found in data file? %s, and found target at (%d,%d,%d).
+chat.appliedenergistics2.CompassTestFailure=Found in data file? %s, and found no target.
 
 // Creative Tabs
 itemGroup.appliedenergistics2=Applied Energistics 2
@@ -642,6 +644,7 @@ commands.ae2.ChunkLogger=Toggles Chunk Loading and unloading to the server log. 
 commands.ae2.ChunkLoggerOn=Chunk Logging is now on
 commands.ae2.ChunkLoggerOff=Chunk Logging is now off
 commands.ae2.Supporters=Displays a list of AE2 Supporters
+commands.ae2.Compass=Tests each Section in the current chunk for compass target. ( OP )
 
 // Achievements
 achievement.ae2.Root=Applied Energistics

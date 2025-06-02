@@ -16,19 +16,29 @@
  * along with Applied Energistics 2.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
 
-package appeng.worldgen.meteorite;
+package appeng.worldgen.meteorite.fallout;
 
 
 import appeng.api.definitions.IBlockDefinition;
+import appeng.worldgen.meteorite.MeteoriteBlockPutter;
 import net.minecraft.init.Blocks;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
+
+import java.util.Random;
 
 
 public class FalloutSand extends FalloutCopy {
     private static final double GLASS_THRESHOLD = 0.66;
     private final MeteoriteBlockPutter putter;
 
-    public FalloutSand(final IMeteoriteWorld w, final int x, final int y, final int z, final MeteoriteBlockPutter putter, final IBlockDefinition skyStoneDefinition) {
-        super(w, x, y, z, putter, skyStoneDefinition);
+    public FalloutSand(
+            final World w,
+            final BlockPos pos,
+            final MeteoriteBlockPutter putter,
+            final IBlockDefinition skyStoneDefinition,
+            final Random random) {
+        super(w, pos, putter, skyStoneDefinition, random);
         this.putter = putter;
     }
 
@@ -38,9 +48,9 @@ public class FalloutSand extends FalloutCopy {
     }
 
     @Override
-    public void getOther(final IMeteoriteWorld w, final int x, final int y, final int z, final double a) {
+    public void getOther(final World w, final BlockPos pos, final double a) {
         if (a > GLASS_THRESHOLD) {
-            this.putter.put(w, x, y, z, Blocks.GLASS);
+            this.putter.put(w, pos, Blocks.GLASS);
         }
     }
 }

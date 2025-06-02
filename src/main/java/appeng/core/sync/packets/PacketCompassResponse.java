@@ -22,51 +22,45 @@ package appeng.core.sync.packets;
 import appeng.core.sync.AppEngPacket;
 import appeng.core.sync.network.INetworkInfo;
 import appeng.hooks.CompassManager;
-import appeng.hooks.CompassResult;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 
 
 public class PacketCompassResponse extends AppEngPacket {
 
-    private final long attunement;
-    private final int cx;
-    private final int cz;
-    private final int cdy;
+    private final ChunkPos requestedPos;
 
-    private CompassResult cr;
+    private final BlockPos closestMeteorite;
 
     // automatic.
     public PacketCompassResponse(final ByteBuf stream) {
-        this.attunement = stream.readLong();
-        this.cx = stream.readInt();
-        this.cz = stream.readInt();
-        this.cdy = stream.readInt();
-
-        this.cr = new CompassResult(stream.readBoolean(), stream.readBoolean(), stream.readDouble());
+        this.requestedPos = new ChunkPos(stream.readInt(), stream.readInt());
+        final boolean hasResult = stream.readBoolean();
+        BlockPos closestMeteorite = BlockPos.fromLong(stream.readLong());
+        this.closestMeteorite = hasResult ? closestMeteorite : null;
     }
 
     // api
-    public PacketCompassResponse(final PacketCompassRequest req, final boolean hasResult, final boolean spin, final double radians) {
-
+    public PacketCompassResponse(final ChunkPos requestedPos, final boolean hasResult, final BlockPos closestMeteorite) {
+        this.requestedPos = requestedPos;
+        this.closestMeteorite = closestMeteorite;
         final ByteBuf data = Unpooled.buffer();
 
         data.writeInt(this.getPacketID());
-        data.writeLong(this.attunement = req.attunement);
-        data.writeInt(this.cx = req.cx);
-        data.writeInt(this.cz = req.cz);
-        data.writeInt(this.cdy = req.cdy);
+        data.writeInt(requestedPos.x);
+        data.writeInt(requestedPos.z);
 
         data.writeBoolean(hasResult);
-        data.writeBoolean(spin);
-        data.writeDouble(radians);
+        data.writeLong(closestMeteorite.toLong());
 
         this.configureWrite(data);
     }
 
     @Override
     public void clientPacketData(final INetworkInfo network, final AppEngPacket packet, final EntityPlayer player) {
-        CompassManager.INSTANCE.postResult(this.attunement, this.cx << 4, this.cdy << 5, this.cz << 4, this.cr);
+        CompassManager.INSTANCE.postResult(this.requestedPos, this.closestMeteorite);
     }
 }
