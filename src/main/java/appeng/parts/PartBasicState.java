@@ -47,22 +47,28 @@ public abstract class PartBasicState extends AEBasePart implements IPowerChannel
     @MENetworkEventSubscribe
     public void chanRender(final MENetworkChannelsChanged c) {
         this.getHost().markForUpdate();
+        updateClientFlags();
     }
 
     @MENetworkEventSubscribe
     public void powerRender(final MENetworkPowerStatusChange c) {
         this.getHost().markForUpdate();
+        updateClientFlags();
     }
 
     @MENetworkEventSubscribe
     public void bootingRender(final MENetworkBootingStatusChange bs) {
         this.getHost().markForUpdate();
+        updateClientFlags();
     }
 
     @Override
     public void writeToStream(final ByteBuf data) throws IOException {
         super.writeToStream(data);
+        data.writeByte((byte) this.getClientFlags());
+    }
 
+    protected void updateClientFlags() {
         this.setClientFlags(0);
 
         try {
@@ -78,8 +84,6 @@ public abstract class PartBasicState extends AEBasePart implements IPowerChannel
         } catch (final GridAccessException e) {
             // meh
         }
-
-        data.writeByte((byte) this.getClientFlags());
     }
 
     protected int populateFlags(final int cf) {
