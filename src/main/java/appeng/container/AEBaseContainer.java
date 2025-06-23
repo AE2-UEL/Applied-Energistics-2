@@ -399,9 +399,17 @@ public abstract class AEBaseContainer extends Container {
                                     return ItemStack.EMPTY; // don't insert duplicate encoded patterns to interfaces
                                 }
 
-                                int maxSize = Math.min(tis.getMaxStackSize(), d.getSlotStackLimit());
+                                final int maxSize;
+                                if (d instanceof SlotOversized slotOversized) {
+                                    maxSize = slotOversized.getSlotStackLimit();
+                                } else {
+                                    maxSize = Math.min(tis.getMaxStackSize(), d.getSlotStackLimit());
+                                }
 
                                 int placeAble = maxSize - t.getCount();
+                                if (placeAble <= 0) {
+                                    continue;
+                                }
 
                                 if (tis.getCount() < placeAble) {
                                     placeAble = tis.getCount();
@@ -953,9 +961,13 @@ public abstract class AEBaseContainer extends Container {
 
     @Override
     public ItemStack slotClick(int slotId, int dragType, ClickType clickTypeIn, @NotNull EntityPlayer player) {
-        if (slotId >= 0 && clickTypeIn == ClickType.PICKUP) {
+        if (slotId >= 0) {
             final var slot = this.getSlot(slotId);
-            if (slot instanceof AppEngSlot appEngSlot) {
+            if (slot instanceof SlotDisabled) {
+                return ItemStack.EMPTY;
+            }
+
+            if (slot instanceof AppEngSlot appEngSlot && clickTypeIn == ClickType.PICKUP) {
                 var slotStack = slot.getStack();
                 var draggedStack = this.invPlayer.getItemStack();
 

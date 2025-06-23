@@ -1,5 +1,5 @@
 {
-    "parent": "item/generated",
+    "parent": "appliedenergistics2:item/color_applicator_uncolored",
     "textures": {
         "layer0": "appliedenergistics2:items/color_applicator",
         "layer1": "appliedenergistics2:items/color_applicator_tip_dark",

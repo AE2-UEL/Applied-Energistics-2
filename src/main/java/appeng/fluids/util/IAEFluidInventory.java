@@ -28,4 +28,8 @@ public interface IAEFluidInventory {
 
     default void onFluidInventoryChanged(final IAEFluidTank inv, final int slot, InvOperation operation, FluidStack added, FluidStack removed) {
     }
+
+    default void onFluidInventoryChanged(final IAEFluidTank inv, FluidStack added, FluidStack removed) {
+    }
+
 }

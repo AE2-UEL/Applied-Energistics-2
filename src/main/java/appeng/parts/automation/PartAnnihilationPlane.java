@@ -54,6 +54,7 @@ import appeng.util.Platform;
 import appeng.util.SettingsFrom;
 import appeng.util.item.AEItemStack;
 import com.google.common.collect.Lists;
+import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.enchantment.Enchantment;
@@ -69,6 +70,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
@@ -392,7 +394,7 @@ public class PartAnnihilationPlane extends PartBasicState implements IGridTickab
                     if (hasPower && canStore) {
                         if (modulate) {
                             energy.extractAEPower(requiredPower, Actionable.MODULATE, PowerMultiplier.CONFIG);
-                            this.breakBlockAndStoreItems(w, pos);
+                            this.breakBlockAndStoreItems(w, pos, items);
                             AppEng.proxy.sendToAllNearExcept(null, pos.getX(), pos.getY(), pos.getZ(), 64, w,
                                     new PacketTransitionEffect(pos.getX(), pos.getY(), pos.getZ(), this.getSide(), true));
                         } else {
@@ -460,13 +462,8 @@ public class PartAnnihilationPlane extends PartBasicState implements IGridTickab
             }
             return out;
         } else {
-            if (enchantments.containsKey(Enchantments.FORTUNE)) {
-                final ItemStack[] out = Platform.getBlockDrops(w, pos, enchantments.get(Enchantments.FORTUNE));
-                return Lists.newArrayList(out);
-            } else {
-                ItemStack[] blockDrops = Platform.getBlockDrops(w, pos);
-                return Lists.newArrayList(blockDrops);
-            }
+            final ItemStack[] out = Platform.getBlockDrops(w, pos, enchantments.getOrDefault(Enchantments.FORTUNE, 0));
+            return Lists.newArrayList(out);
         }
     }
 
@@ -534,18 +531,14 @@ public class PartAnnihilationPlane extends PartBasicState implements IGridTickab
         return canStore;
     }
 
-    private void breakBlockAndStoreItems(final WorldServer w, final BlockPos pos) {
-        final List<ItemStack> items = this.obtainBlockDrops(w, pos);
+    private void breakBlockAndStoreItems(final WorldServer w, final BlockPos pos, List<ItemStack> items) {
+        for (ItemStack item : items) {
+            Block.spawnAsEntity(w, pos, item);
+        }
 
-        try {
-            final IStorageGrid storage = this.getProxy().getStorage();
-            for (ItemStack itemStack : items) {
-                final IAEItemStack aeItemStack = AEItemStack.fromItemStack(itemStack);
-                storage.getInventory(AEApi.instance().storage().getStorageChannel(IItemStorageChannel.class))
-                        .injectItems(aeItemStack, Actionable.MODULATE, this.mySrc);
-            }
-        } catch (GridAccessException e) {
-
+        final AxisAlignedBB box = new AxisAlignedBB(pos).grow(0.2);
+        for (EntityItem entityItem : w.getEntitiesWithinAABB(EntityItem.class, box)) {
+            this.storeEntityItem(entityItem);
         }
 
         w.destroyBlock(pos, false);

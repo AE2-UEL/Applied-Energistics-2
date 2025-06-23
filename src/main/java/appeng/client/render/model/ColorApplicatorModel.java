@@ -55,7 +55,7 @@ public class ColorApplicatorModel implements IModel {
 
         ImmutableMap<ItemCameraTransforms.TransformType, TRSRTransformation> map = PerspectiveMapWrapper.getTransforms(state);
 
-        return new ColorApplicatorBakedModel(baseModel, map, texDark, texMedium, texBright);
+        return new ColorApplicatorBakedModel(baseModel, texDark, texMedium, texBright);
     }
 
     private IBakedModel getBaseModel(IModelState state, VertexFormat format, Function<ResourceLocation, TextureAtlasSprite> bakedTextureGetter) {

@@ -183,6 +183,12 @@ public abstract class AEBaseGui extends GuiContainer implements IMTModGuiContain
                 this.drawTooltip((ITooltip) c, mouseX, mouseY);
             }
         }
+
+        for (final Object o : this.labelList) {
+            if (o instanceof ITooltip) {
+                this.drawTooltip((ITooltip) o, mouseX, mouseY);
+            }
+        }
         GlStateManager.enableDepth();
         if (Platform.isModLoaded("jei")) {
             bookmarkedJEIghostItem(mouseX, mouseY);

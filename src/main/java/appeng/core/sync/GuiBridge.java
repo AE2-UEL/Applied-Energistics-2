@@ -58,20 +58,11 @@ import appeng.parts.automation.PartFormationPlane;
 import appeng.parts.automation.PartLevelEmitter;
 import appeng.parts.misc.PartOreDicStorageBus;
 import appeng.parts.misc.PartStorageBus;
-import appeng.parts.reporting.PartCraftingTerminal;
-import appeng.parts.reporting.PartExpandedProcessingPatternTerminal;
-import appeng.parts.reporting.PartFluidInterfaceConfigurationTerminal;
-import appeng.parts.reporting.PartInterfaceConfigurationTerminal;
-import appeng.parts.reporting.PartInterfaceTerminal;
-import appeng.parts.reporting.PartPatternTerminal;
+import appeng.parts.reporting.*;
 import appeng.tile.crafting.TileCraftingTile;
 import appeng.tile.crafting.TileMolecularAssembler;
 import appeng.tile.grindstone.TileGrinder;
-import appeng.tile.misc.TileCellWorkbench;
-import appeng.tile.misc.TileCondenser;
-import appeng.tile.misc.TileInscriber;
-import appeng.tile.misc.TileSecurityStation;
-import appeng.tile.misc.TileVibrationChamber;
+import appeng.tile.misc.*;
 import appeng.tile.networking.TileWireless;
 import appeng.tile.qnb.TileQuantumBridge;
 import appeng.tile.spatial.TileSpatialIOPort;
@@ -114,7 +105,7 @@ public enum GuiBridge implements IGuiHandler {
     GUI_WIRELESS_CRAFTING_TERMINAL(ContainerWirelessCraftingTerminal.class, WirelessTerminalGuiObject.class, GuiHostType.ITEM, null),
     GUI_WIRELESS_PATTERN_TERMINAL(ContainerWirelessPatternTerminal.class, WirelessTerminalGuiObject.class, GuiHostType.ITEM, null),
     GUI_WIRELESS_FLUID_TERMINAL(ContainerWirelessFluidTerminal.class, WirelessTerminalGuiObject.class, GuiHostType.ITEM, null),
-
+    GUI_WIRELESS_INTERFACE_TERMINAL(ContainerWirelessInterfaceTerminal.class, WirelessTerminalGuiObject.class, GuiHostType.ITEM, null),
 
     GUI_NETWORK_STATUS(ContainerNetworkStatus.class, INetworkTool.class, GuiHostType.ITEM, null),
 

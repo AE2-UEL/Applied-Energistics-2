@@ -45,6 +45,9 @@ public class ContainerInterface extends ContainerUpgradeable implements IOptiona
     @GuiSync(8)
     public YesNo iTermMode = YesNo.YES;
 
+    @GuiSync(9)
+    public LockCraftingMode lockReason = LockCraftingMode.NONE;
+
     public ContainerInterface(final InventoryPlayer ip, final IInterfaceHost te) {
         super(ip, te.getInterfaceDuality().getHost());
 
@@ -94,6 +97,10 @@ public class ContainerInterface extends ContainerUpgradeable implements IOptiona
             patternExpansions = getPatternUpgrades();
             this.myDuality.dropExcessPatterns();
         }
+
+        if (Platform.isServer()){
+            lockReason = myDuality.getCraftingLockedReason();
+        }
         super.detectAndSendChanges();
     }
 
@@ -133,5 +140,9 @@ public class ContainerInterface extends ContainerUpgradeable implements IOptiona
 
     public int getPatternUpgrades() {
         return this.myDuality.getInstalledUpgrades(Upgrades.PATTERN_EXPANSION);
+    }
+
+    public LockCraftingMode getCraftingLockedReason() {
+        return lockReason;
     }
 }

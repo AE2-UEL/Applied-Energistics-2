@@ -31,6 +31,7 @@ import appeng.client.gui.widgets.MEGuiTooltipTextField;
 import appeng.client.me.ClientDCInternalInv;
 import appeng.client.me.SlotDisconnected;
 import appeng.container.implementations.ContainerInterfaceTerminal;
+import appeng.container.implementations.ContainerWirelessInterfaceTerminal;
 import appeng.container.slot.AppEngSlot;
 import appeng.core.AEConfig;
 import appeng.core.AppEng;
@@ -39,6 +40,7 @@ import appeng.core.localization.GuiText;
 import appeng.core.localization.PlayerMessages;
 import appeng.helpers.DualityInterface;
 import appeng.helpers.PatternHelper;
+import appeng.helpers.WirelessTerminalGuiObject;
 import appeng.parts.reporting.PartInterfaceTerminal;
 import appeng.util.BlockPosUtils;
 import appeng.util.Platform;
@@ -67,9 +69,10 @@ import static appeng.helpers.ItemStackHelper.stackFromNBT;
 
 public class GuiInterfaceTerminal extends AEBaseGui {
 
-    private static final int OFFSET_X = 21;
+    protected static final int OFFSET_X = 21;
+    protected final GuiText guiTitle;
     private static final int MAGIC_HEIGHT_NUMBER = 52 + 99;
-    private static final String MOLECULAR_ASSEMBLER = "molecular assembler";
+    private static final String MOLECULAR_ASSEMBLER = "tile.appliedenergistics2.molecular_assembler";
 
     private final boolean jeiEnabled;
     private final int jeiButtonPadding;
@@ -121,6 +124,29 @@ public class GuiInterfaceTerminal extends AEBaseGui {
         guiButtonHideFull = new GuiImgButton(0, 0, Settings.ACTIONS, null);
         guiButtonBrokenRecipes = new GuiImgButton(0, 0, Settings.ACTIONS, null);
         terminalStyleBox = new GuiImgButton(0, 0, Settings.TERMINAL_STYLE, null);
+        guiTitle = GuiText.InterfaceTerminal;
+    }
+
+    public GuiInterfaceTerminal(final InventoryPlayer inventoryPlayer, final WirelessTerminalGuiObject guiObject) {
+        super(new ContainerWirelessInterfaceTerminal(inventoryPlayer, guiObject));
+
+        final GuiScrollbar scrollbar = new GuiScrollbar();
+        this.setScrollBar(scrollbar);
+        this.xSize = 208;
+        this.ySize = 255;
+        this.jeiEnabled = Platform.isModLoaded("jei");
+        this.jeiButtonPadding = jeiEnabled ? 22 : 0;
+
+        searchFieldInputs = createTextField(86, 12, ButtonToolTips.SearchFieldInputs.getLocal());
+        searchFieldOutputs = createTextField(86, 12, ButtonToolTips.SearchFieldOutputs.getLocal());
+        searchFieldNames = createTextField(71, 12, ButtonToolTips.SearchFieldNames.getLocal());
+        searchFieldNames.setFocused(true);
+
+        guiButtonAssemblersOnly = new GuiImgButton(0, 0, Settings.ACTIONS, null);
+        guiButtonHideFull = new GuiImgButton(0, 0, Settings.ACTIONS, null);
+        guiButtonBrokenRecipes = new GuiImgButton(0, 0, Settings.ACTIONS, null);
+        terminalStyleBox = new GuiImgButton(0, 0, Settings.TERMINAL_STYLE, null);
+        guiTitle = GuiText.WirelessTerminal;
     }
 
     private MEGuiTooltipTextField createTextField(final int width, final int height, final String tooltip) {
@@ -199,7 +225,7 @@ public class GuiInterfaceTerminal extends AEBaseGui {
 
     @Override
     public void drawFG(final int offsetX, final int offsetY, final int mouseX, final int mouseY) {
-        this.fontRenderer.drawString(this.getGuiDisplayName(GuiText.InterfaceTerminal.getLocal()), OFFSET_X + 2, 6, 4210752);
+        this.fontRenderer.drawString(this.getGuiDisplayName(guiTitle.getLocal()), OFFSET_X + 2, 6, 4210752);
         this.fontRenderer.drawString(GuiText.inventory.getLocal(), OFFSET_X + 2, this.ySize - 96, 4210752);
 
         final int currentScroll = this.getScrollBar().getCurrentScroll();
@@ -536,7 +562,8 @@ public class GuiInterfaceTerminal extends AEBaseGui {
                 continue;
             }
             // Exit if molecular assembler filter is on and this is not a molecular assembler
-            if (onlyMolecularAssemblers && !entry.getName().toLowerCase().contains(MOLECULAR_ASSEMBLER)) {
+            // Forge documantation said unlocalized name shouldn't be use for logic, so we might need a better way......
+            if (onlyMolecularAssemblers && !entry.getUnlocalizedName().equals(MOLECULAR_ASSEMBLER)) {
                 cachedSearch.remove(entry);
                 continue;
             }

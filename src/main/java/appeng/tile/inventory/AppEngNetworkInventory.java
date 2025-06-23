@@ -8,6 +8,7 @@ import appeng.api.storage.IMEInventory;
 import appeng.api.storage.channels.IItemStorageChannel;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.util.inv.IAEAppEngInventory;
+import appeng.util.inv.InvOperation;
 import appeng.util.item.AEItemStack;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.items.wrapper.RangedWrapper;
@@ -37,8 +38,16 @@ public class AppEngNetworkInventory extends AppEngInternalOversizedInventory {
             if (overflow != null && overflow.getStackSize() == originAmt) {
                 return super.insertItem(slot, stack, simulate);
             } else if (overflow != null) {
+                if (!simulate) {
+                    ItemStack added = stack.copy();
+                    added.setCount((int) (stack.getCount() - overflow.getStackSize()));
+                    this.getTileEntity().onChangeInventory(this, slot, InvOperation.INSERT, ItemStack.EMPTY, added);
+                }
                 return overflow.createItemStack();
             } else {
+                if (!simulate) {
+                    this.getTileEntity().onChangeInventory(this, slot, InvOperation.INSERT, ItemStack.EMPTY, stack);
+                }
                 return ItemStack.EMPTY;
             }
         } else {

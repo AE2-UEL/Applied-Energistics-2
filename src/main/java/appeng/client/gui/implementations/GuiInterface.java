@@ -23,6 +23,7 @@ import appeng.api.config.LockCraftingMode;
 import appeng.api.config.Settings;
 import appeng.api.config.YesNo;
 import appeng.client.gui.widgets.GuiImgButton;
+import appeng.client.gui.widgets.GuiImgLabel;
 import appeng.client.gui.widgets.GuiTabButton;
 import appeng.client.gui.widgets.GuiToggleButton;
 import appeng.container.implementations.ContainerInterface;
@@ -45,10 +46,17 @@ public class GuiInterface extends GuiUpgradeable {
     private GuiImgButton UnlockMode;
     private GuiImgButton BlockMode;
     private GuiToggleButton interfaceMode;
+    private GuiImgLabel lockReason;
 
     public GuiInterface(final InventoryPlayer inventoryPlayer, final IInterfaceHost te) {
         super(new ContainerInterface(inventoryPlayer, te));
         this.ySize = 256;
+    }
+
+    @Override
+    public void initGui() {
+        super.initGui();
+        this.addLabel();
     }
 
     @Override
@@ -59,11 +67,20 @@ public class GuiInterface extends GuiUpgradeable {
         this.BlockMode = new GuiImgButton(this.guiLeft - 18, this.guiTop + 8, Settings.BLOCK, YesNo.NO);
         this.buttonList.add(this.BlockMode);
 
-        this.UnlockMode = new GuiImgButton(this.guiLeft - 18,this.guiTop + 26 ,Settings.UNLOCK, LockCraftingMode.NONE);
+        this.UnlockMode = new GuiImgButton(this.guiLeft - 18, this.guiTop + 26, Settings.UNLOCK, LockCraftingMode.NONE);
         this.buttonList.add(this.UnlockMode);
 
         this.interfaceMode = new GuiToggleButton(this.guiLeft - 18, this.guiTop + 44, 84, 85, GuiText.InterfaceTerminal.getLocal(), GuiText.InterfaceTerminalHint.getLocal());
         this.buttonList.add(this.interfaceMode);
+    }
+
+    protected void addLabel() {
+        if (lockReason != null) {
+            labelList.remove(this.lockReason);
+        }
+        this.lockReason = new GuiImgLabel(this.fontRenderer, guiLeft + 40, guiTop + 12, Settings.UNLOCK, LockCraftingMode.NONE);
+        this.lockReason.setVisibility(false);
+        labelList.add(lockReason);
     }
 
     @Override
@@ -74,6 +91,15 @@ public class GuiInterface extends GuiUpgradeable {
 
         if (this.UnlockMode != null) {
             this.UnlockMode.set(((ContainerInterface) this.cvb).getUnlockMode());
+
+            if (this.lockReason != null) {
+                if (this.UnlockMode.getCurrentValue() == LockCraftingMode.NONE) {
+                    this.lockReason.setVisibility(false);
+                } else {
+                    this.lockReason.setVisibility(true);
+                    this.lockReason.set(((ContainerInterface) this.cvb).getCraftingLockedReason());
+                }
+            }
         }
 
         if (this.interfaceMode != null) {

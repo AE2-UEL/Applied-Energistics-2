@@ -46,7 +46,6 @@ import appeng.helpers.IMouseWheelItem;
 import appeng.hooks.TickHandler;
 import appeng.hooks.TickHandler.PlayerColor;
 import appeng.items.tools.powered.Terminal;
-import appeng.items.tools.powered.ToolWirelessTerminal;
 import appeng.server.ServerHelper;
 import appeng.util.Platform;
 import net.minecraft.client.Minecraft;
@@ -54,7 +53,6 @@ import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Items;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumHand;
@@ -63,8 +61,6 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.*;
 import net.minecraftforge.client.model.ModelLoaderRegistry;
-import net.minecraftforge.client.settings.KeyConflictContext;
-import net.minecraftforge.client.settings.KeyModifier;
 import net.minecraftforge.common.ForgeModContainer;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.client.FMLClientHandler;
@@ -73,22 +69,12 @@ import net.minecraftforge.fml.client.registry.RenderingRegistry;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.InputEvent;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
-import static appeng.client.KeyBindings.WCT;
-import static appeng.client.KeyBindings.WFT;
-import static appeng.client.KeyBindings.WPT;
-import static appeng.client.KeyBindings.WT;
+import static appeng.client.KeyBindings.*;
 
 
 public class ClientHelper extends ServerHelper {
@@ -354,6 +340,8 @@ public class ClientHelper extends ServerHelper {
                     NetworkHandler.instance().sendToServer(new PacketTerminalUse(Terminal.WIRELESS_PATTERN_TERMINAL));
                 } else if (k == WFT.getKeyBinding()) {
                     NetworkHandler.instance().sendToServer(new PacketTerminalUse(Terminal.WIRELESS_FLUID_TERMINAL));
+                } else if (k == WIT.getKeyBinding()) {
+                    NetworkHandler.instance().sendToServer(new PacketTerminalUse(Terminal.WIRELESS_INTERFACE_TERMINAL));
                 }
             }
         }

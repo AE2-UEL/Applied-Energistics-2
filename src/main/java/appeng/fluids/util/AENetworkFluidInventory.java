@@ -35,8 +35,16 @@ public class AENetworkFluidInventory extends AEFluidInventory {
             if (overflow != null && overflow.getStackSize() == originAmt) {
                 return super.fill(fluid, doFill);
             } else if (overflow != null) {
+                if (doFill) {
+                    FluidStack added = fluid.copy();
+                    added.amount = (int) (fluid.amount - overflow.getStackSize());
+                    this.handler.onFluidInventoryChanged(this, added, null);
+                }
                 return (int) (originAmt - overflow.getStackSize());
             } else {
+                if (doFill) {
+                    this.handler.onFluidInventoryChanged(this, fluid, null);
+                }
                 return originAmt;
             }
         } else {

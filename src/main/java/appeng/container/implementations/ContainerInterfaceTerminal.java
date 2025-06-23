@@ -34,6 +34,7 @@ import appeng.core.sync.packets.PacketInventoryAction;
 import appeng.helpers.DualityInterface;
 import appeng.helpers.IInterfaceHost;
 import appeng.helpers.InventoryAction;
+import appeng.helpers.WirelessTerminalGuiObject;
 import appeng.items.misc.ItemEncodedPattern;
 import appeng.parts.misc.PartInterface;
 import appeng.parts.reporting.PartInterfaceTerminal;
@@ -65,7 +66,7 @@ import java.util.Map.Entry;
 import static appeng.helpers.ItemStackHelper.stackWriteToNBT;
 
 
-public final class ContainerInterfaceTerminal extends AEBaseContainer {
+public class ContainerInterfaceTerminal extends AEBaseContainer {
 
     /**
      * this stuff is all server side..
@@ -85,6 +86,21 @@ public final class ContainerInterfaceTerminal extends AEBaseContainer {
         }
 
         this.bindPlayerInventory(ip, 0, 0);
+    }
+
+    public ContainerInterfaceTerminal(final InventoryPlayer ip, final WirelessTerminalGuiObject guiObject, boolean bindInventory) {
+        super(ip, guiObject);
+
+        if (Platform.isServer()) {
+            IGridNode node = guiObject.getActionableNode();
+            if (node != null && node.isActive()) {
+                this.grid = node.getGrid();
+            }
+        }
+
+        if (bindInventory) {
+            this.bindPlayerInventory(ip, 0, 0);
+        }
     }
 
     @Override
@@ -185,14 +201,16 @@ public final class ContainerInterfaceTerminal extends AEBaseContainer {
                 final AppEngSlot playerSlot;
                 try {
                     playerSlot = (AppEngSlot) this.inventorySlots.get(slot);
-                } catch (IndexOutOfBoundsException ignored) { return; }
+                } catch (IndexOutOfBoundsException ignored) {
+                    return;
+                }
 
                 if (!playerSlot.isPlayerSide() || !playerSlot.getHasStack()) return;
 
                 var itemStack = playerSlot.getStack();
                 if (!itemStack.isEmpty()) {
                     var handler = new WrapperFilteredItemHandler(
-                        new WrapperRangeItemHandler(inv.server, 0, 9 * (inv.numUpgrades + 1)), new PatternSlotFilter());
+                            new WrapperRangeItemHandler(inv.server, 0, 9 * (inv.numUpgrades + 1)), new PatternSlotFilter());
                     playerSlot.putStack(ItemHandlerHelper.insertItem(handler, itemStack, false));
                     detectAndSendChanges();
                 }
@@ -388,7 +406,7 @@ public final class ContainerInterfaceTerminal extends AEBaseContainer {
                     if (slot instanceof SlotDisconnected slotDisconnected && !slot.getHasStack()) {
                         // Signal the server to move the pattern.
                         var packet = new PacketInventoryAction(InventoryAction.PLACE_SINGLE,
-                            playerAppEngSlot.slotNumber, slotDisconnected.getSlot().getId());
+                                playerAppEngSlot.slotNumber, slotDisconnected.getSlot().getId());
 
                         NetworkHandler.instance().sendToServer(packet);
 

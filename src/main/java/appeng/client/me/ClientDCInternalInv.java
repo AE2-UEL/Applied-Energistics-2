@@ -55,6 +55,10 @@ public class ClientDCInternalInv implements Comparable<ClientDCInternalInv> {
         return s;
     }
 
+    public String getUnlocalizedName() {
+        return this.unlocalizedName;
+    }
+
     @Override
     public int compareTo(@Nonnull final ClientDCInternalInv o) {
         return Long.compare(this.sortBy, o.sortBy);
