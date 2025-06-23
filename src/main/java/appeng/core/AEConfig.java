@@ -29,15 +29,20 @@ import appeng.util.ConfigManager;
 import appeng.util.IConfigManagerHost;
 import appeng.util.Platform;
 import com.google.common.collect.Sets;
+import net.minecraft.item.Item;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;
+import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fml.client.event.ConfigChangedEvent;
 import net.minecraftforge.fml.common.ModContainer;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 
@@ -73,6 +78,11 @@ public final class AEConfig extends Configuration implements IConfigurableObject
     private final double wirelessHighWirelessCount = 64;
     private String[] nonBlockingItems = {"[gregtech|actuallyadditions]", "gregtech:circuit.integrated", "gregtech:shape.mold.plate", "gregtech:shape.mold.gear", "gregtech:shape.mold.credit", "gregtech:shape.mold.bottle", "gregtech:shape.mold.ingot", "gregtech:shape.mold.ball", "gregtech:shape.mold.block", "gregtech:shape.mold.nugget", "gregtech:shape.mold.cylinder", "gregtech:shape.mold.anvil", "gregtech:shape.mold.name", "gregtech:shape.mold.gear.small", "gregtech:shape.mold.rotor", "gregtech:shape.extruder.plate", "gregtech:shape.extruder.rod", "gregtech:shape.extruder.bolt", "gregtech:shape.extruder.ring", "gregtech:shape.extruder.cell", "gregtech:shape.extruder.ingot", "gregtech:shape.extruder.wire", "gregtech:shape.extruder.pipe.tiny", "gregtech:shape.extruder.pipe.small", "gregtech:shape.extruder.pipe.medium", "gregtech:shape.extruder.pipe.normal", "gregtech:shape.extruder.pipe.large", "gregtech:shape.extruder.pipe.huge", "gregtech:shape.extruder.block", "gregtech:shape.extruder.sword", "gregtech:shape.extruder.pickaxe", "gregtech:shape.extruder.shovel", "gregtech:shape.extruder.axe", "gregtech:shape.extruder.hoe", "gregtech:shape.extruder.hammer", "gregtech:shape.extruder.file", "gregtech:shape.extruder.saw", "gregtech:shape.extruder.gear", "gregtech:shape.extruder.bottle", "gregtech:shape.extruder.foil", "gregtech:shape.extruder.gear_small", "gregtech:shape.extruder.rod_long", "gregtech:shape.extruder.rotor", "gregtech:glass_lens.white", "gregtech:glass_lens.orange", "gregtech:glass_lens.magenta", "gregtech:glass_lens.light_blue", "gregtech:glass_lens.yellow", "gregtech:glass_lens.lime", "gregtech:glass_lens.pink", "gregtech:glass_lens.gray", "gregtech:glass_lens.light_gray", "gregtech:glass_lens.cyan", "gregtech:glass_lens.purple", "gregtech:glass_lens.blue", "gregtech:glass_lens.brown", "gregtech:glass_lens.green", "gregtech:glass_lens.red", "gregtech:glass_lens.black", "contenttweaker:smallgearextrudershape", "contenttweaker:creativeportabletankmold", "ore:lensAlmandine", "ore:lensBlueTopaz", "ore:lensDiamond", "ore:lensEmerald", "ore:lensGreenSapphire", "ore:lensRutile", "ore:lensRuby", "ore:lensSapphire", "ore:lensTopaz", "ore:lensJasper", "ore:lensGlass", "ore:lensOlivine", "ore:lensOpal", "ore:lensAmethyst", "ore:lensLapis", "ore:lensEnderPearl", "ore:lensEnderEye", "ore:lensGarnetRed", "ore:lensGarnetYellow", "ore:lensVinteum", "ore:lensNetherStar",};
     private boolean updatable = false;
+    
+    // Condenser
+    private static final String[] nonCondensableKeysDefault = {"ae2fc:fluid_drop"};
+    private Set<String> nonCondensableKeys = setOf(nonCondensableKeysDefault);
+    
     // Misc
     private boolean removeCrashingItemsOnLoad = false;
     private int formationPlaneEntityLimit = 128;
@@ -85,6 +95,12 @@ public final class AEConfig extends Configuration implements IConfigurableObject
     private boolean showCraftableTooltip = true;
     private boolean showPlacementPreview = true;
     private boolean showCellContentsPreview = true;
+    
+    // Stack ordering size fixer
+    private static final String[] stackSizeFixerRatiosDefault = {
+        "ae2fc:fluid_drop=1000"
+    };
+    private Map<String, Double> stackSizeFixerRatios = mapOf(stackSizeFixerRatiosDefault, Double::parseDouble);
 
     // Spatial IO/Dimension
     private int storageProviderID = -1;
@@ -143,6 +159,7 @@ public final class AEConfig extends Configuration implements IConfigurableObject
 
         CondenserOutput.MATTER_BALLS.requiredPower = this.get("Condenser", "MatterBalls", 256).getInt(256);
         CondenserOutput.SINGULARITY.requiredPower = this.get("Condenser", "Singularity", 256000).getInt(256000);
+        this.nonCondensableKeys = setOf(this.get("Condenser", "NonCondensable", nonCondensableKeysDefault).getStringList());
 
         this.removeCrashingItemsOnLoad = this.get("general", "removeCrashingItemsOnLoad", false, "Will auto-remove items that crash when being loaded from storage. This will destroy those items instead of crashing the game!").getBoolean();
         this.normalChannelCapacity = Math.min(this.get("general", "normalChannelCapacity", this.normalChannelCapacity, "Max channel number may not exceed 256").getInt(this.normalChannelCapacity), 256);
@@ -180,6 +197,8 @@ public final class AEConfig extends Configuration implements IConfigurableObject
         this.wirelessBoosterExp = this.get("wireless", "wirelessBoosterExp", this.wirelessBoosterExp).getDouble(this.wirelessBoosterExp);
         this.wirelessTerminalDrainMultiplier = this.get("wireless", "wirelessTerminalDrainMultiplier", this.wirelessTerminalDrainMultiplier).getDouble(this.wirelessTerminalDrainMultiplier);
 
+        this.stackSizeFixerRatios = mapOf(this.get("stackSizeFixer", "ratios", stackSizeFixerRatiosDefault).getStringList(), Double::parseDouble);
+        
         this.formationPlaneEntityLimit = this.get("automation", "formationPlaneEntityLimit", this.formationPlaneEntityLimit).getInt(this.formationPlaneEntityLimit);
 
         this.wirelessTerminalBattery = this.get("battery", "wirelessTerminal", this.wirelessTerminalBattery).getInt(this.wirelessTerminalBattery);
@@ -243,6 +262,19 @@ public final class AEConfig extends Configuration implements IConfigurableObject
         }
 
         this.updatable = true;
+    }
+    
+    private static Set<String> setOf(String[] configData) {
+        return new HashSet<>(Arrays.asList(configData));
+    }
+    
+    private static <T> Map<String, T> mapOf(String[] configData, Function<String, T> converter) {
+        Map<String, T> map = new HashMap<>();
+        for (String configDatum : configData) {
+            String[] parts = configDatum.split("=");
+            map.put(parts[0], converter.apply(parts[1]));
+        }
+        return map;
     }
 
     public static void init(final File configFile) {
@@ -703,4 +735,24 @@ public final class AEConfig extends Configuration implements IConfigurableObject
     public int getDenseChannelCapacity() {
         return this.denseChannelCapacity;
     }
+    
+    public boolean isCondensable(@Nullable String key) {
+        if (key == null) return false;
+        return !this.nonCondensableKeys.contains(key);
+    }
+    
+    public Map<String, Double> stackSizeFixerRatios() {
+        return this.stackSizeFixerRatios;
+    }
+    
+    public static @Nullable String key(Item item) {
+        ResourceLocation resourceLocation = item.getRegistryName();
+        if (resourceLocation == null) return null;
+        else return resourceLocation.getNamespace()+":"+resourceLocation.getPath();
+    }
+    
+    public static String key(Fluid fluid) {
+        return fluid.getName();
+    }
+    
 }

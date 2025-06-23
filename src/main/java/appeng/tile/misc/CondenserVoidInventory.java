@@ -46,7 +46,7 @@ class CondenserVoidInventory<T extends IAEStack<T>> implements IMEMonitor<T> {
         }
 
         if (input != null) {
-            this.target.addPower(input.getStackSize() / (double) this.channel.transferFactor());
+            this.target.addPower(input, this.channel.transferFactor());
         }
         return null;
     }

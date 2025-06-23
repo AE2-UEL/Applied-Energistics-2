@@ -21,9 +21,11 @@ package appeng.util;
 
 import appeng.api.config.SortDir;
 import appeng.api.storage.data.IAEItemStack;
+import appeng.core.AEConfig;
 import appeng.integration.Integrations;
 import appeng.integration.abstraction.IInvTweaks;
 import appeng.util.item.AEItemStack;
+import net.minecraft.item.Item;
 
 import java.util.Comparator;
 
@@ -53,7 +55,7 @@ public class ItemSorters {
 
     public static final Comparator<IAEItemStack> CONFIG_BASED_SORT_BY_SIZE = (o1, o2) ->
     {
-        final int cmp = Long.compare(o2.getStackSize(), o1.getStackSize());
+        final int cmp = Long.compare(fixStackSize(o2.getItem(), o2.getStackSize()), fixStackSize(o1.getItem(), o1.getStackSize()));
         return applyDirection(cmp);
     };
 
@@ -105,4 +107,9 @@ public class ItemSorters {
         }
         return -cmp;
     }
+    
+    private static long fixStackSize(Item item, long size) {
+        return (long) (size / AEConfig.instance().stackSizeFixerRatios().getOrDefault(AEConfig.key(item), 1D));
+    }
+    
 }
