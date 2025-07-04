@@ -72,6 +72,11 @@ public class AE2ELTransformer implements IClassTransformer {
                             "readItemStack", "func_150791_c",
                             "writeItemStack", "func_150788_a");
                 });
+            } else if ("net.minecraftforge.common.util.PacketUtil".equals(transformedName)) {
+                consumer = consumer.andThen((node) -> {
+                    spliceClasses(node, "appeng.core.transformer.PacketUtilPatch",
+                            "writeItemStackFromClientToServer");
+                });
             }
         }
 
