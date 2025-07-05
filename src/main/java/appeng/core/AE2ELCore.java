@@ -19,16 +19,25 @@
 
 package appeng.core;
 
+import net.minecraft.launchwrapper.IClassTransformer;
+import net.minecraft.launchwrapper.Launch;
+import net.minecraftforge.fml.relauncher.FMLLaunchHandler;
 import net.minecraftforge.fml.relauncher.IFMLLoadingPlugin;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nullable;
 import java.util.Map;
 
 @IFMLLoadingPlugin.Name("AE2ELCore")
 @IFMLLoadingPlugin.MCVersion("1.12.2")
-@IFMLLoadingPlugin.SortingIndex(1001)
+@IFMLLoadingPlugin.SortingIndex(1002) // after stackup
 @IFMLLoadingPlugin.TransformerExclusions("appeng.core.transformer")
 public class AE2ELCore implements IFMLLoadingPlugin {
+    public static final Logger LOGGER = LogManager.getLogger("appliedenergistics2");
+    public static final boolean isDeobf = FMLLaunchHandler.isDeobfuscatedEnvironment();
+    public static boolean stackUpLoaded = false;
+
     @Override
     public String[] getASMTransformerClass() {
         return new String[]{
@@ -49,6 +58,13 @@ public class AE2ELCore implements IFMLLoadingPlugin {
 
     @Override
     public void injectData(Map<String, Object> data) {
+        for (IClassTransformer transformer : Launch.classLoader.getTransformers()) {
+            String name = transformer.getClass().getName();
+            if (name.endsWith("pl.asie.stackup.core.StackUpTransformer")) {
+                stackUpLoaded = true;
+                break;
+            }
+        }
     }
 
     @Override
