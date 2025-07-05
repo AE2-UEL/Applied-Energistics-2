@@ -97,6 +97,7 @@ public final class ItemStackPatch extends ClassVisitor {
                 name = NBT_SET_INTEGER_METHOD;
                 desc = desc.replace('B', 'I');
                 isCount = false;
+                hasCast = false;
                 AE2ELCore.LOGGER.info("Patched ItemStack Count setter!");
             }
             super.visitMethodInsn(opcode, owner, name, desc, itf);
