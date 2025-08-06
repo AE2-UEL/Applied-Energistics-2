@@ -66,15 +66,21 @@ public class PacketInventoryAction extends AppEngPacket {
 
     // automatic.
     public PacketInventoryAction(final ByteBuf stream) throws IOException {
-        this.action = InventoryAction.values()[stream.readInt()];
-        this.slot = stream.readInt();
-        this.id = stream.readLong();
-        final boolean hasItem = stream.readBoolean();
+        try {
+            this.action = InventoryAction.values()[stream.readInt()];
+            this.slot = stream.readInt();
+            this.id = stream.readLong();
+            final boolean hasItem = stream.readBoolean();
 
-        if (hasItem) {
-            this.slotItem = AEItemStack.fromPacket(stream);
-        } else {
-            this.slotItem = null;
+            if (hasItem) {
+                this.slotItem = AEItemStack.fromPacket(stream);
+            } else {
+                this.slotItem = null;
+            }
+        } finally {
+            if (stream != null && stream.refCnt() > 0) {
+                stream.release(); // 确保释放 ByteBuf
+            }
         }
     }
 
