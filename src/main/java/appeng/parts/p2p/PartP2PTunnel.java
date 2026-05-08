@@ -160,12 +160,8 @@ public abstract class PartP2PTunnel<T extends PartP2PTunnel> extends PartBasicSt
             return false;
         }
 
-        boolean pasteAsOutput = true;
-        ItemStack is = player.getHeldItem(hand);
-        if (is.isEmpty()) {
-            pasteAsOutput = false;
-            is = player.getHeldItemOffhand();
-        }
+        final ItemStack is = player.getHeldItem(hand);
+        final boolean pasteAsOutput = !is.isEmpty();
 
         // UniqueIdentifier id = GameRegistry.findUniqueIdentifierFor( is.getItem() );
         // AELog.info( "ID:" + id.toString() + " : " + is.getItemDamage() );
