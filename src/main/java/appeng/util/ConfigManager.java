@@ -67,7 +67,10 @@ public final class ConfigManager implements IConfigManager {
         final Enum<?> oldValue = this.getSetting(settingName);
         this.settings.put(settingName, newValue);
         this.oldSettings.put(settingName, oldValue);
-        this.target.updateSetting(this, settingName, newValue);
+        if (this.target != null) {
+            // it should named onSettingChanged
+            this.target.updateSetting(this, settingName, newValue);
+        }
         return oldValue;
     }
 

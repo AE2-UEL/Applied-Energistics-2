@@ -20,13 +20,19 @@ package appeng.parts.automation;
 
 
 import appeng.api.config.RedstoneMode;
+import appeng.api.config.Settings;
 import appeng.api.config.Upgrades;
+import appeng.api.networking.IGridNode;
 import appeng.api.networking.ticking.IGridTickable;
 import appeng.api.networking.ticking.TickRateModulation;
+import appeng.api.networking.ticking.TickingRequest;
+import appeng.api.util.IConfigManager;
+import appeng.core.settings.TickRates;
 import appeng.me.GridAccessException;
 import appeng.tile.inventory.AppEngInternalAEInventory;
 import appeng.util.InventoryAdaptor;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
@@ -38,26 +44,62 @@ public abstract class PartSharedItemBus extends PartUpgradeable implements IGrid
 
     private final AppEngInternalAEInventory config = new AppEngInternalAEInventory(this, 9);
     private boolean lastRedstone = false;
+    protected TickRates tickRates;
 
-    public PartSharedItemBus(final ItemStack is) {
+    /**
+     * Indicates that an I/O bus in redstone pulse mode has observed a low to high redstone transition and is waiting to
+     * act on this during its next tick.
+     */
+    private boolean pendingPulse = false;
+
+    public PartSharedItemBus(final TickRates tickRates, final ItemStack is) {
         super(is);
+        this.tickRates = tickRates;
+        this.getConfigManager().registerSetting(Settings.REDSTONE_CONTROLLED, RedstoneMode.IGNORE);
+    }
+
+    @Override
+    public RedstoneMode getRSMode() {
+        return (RedstoneMode) this.getConfigManager().getSetting(Settings.REDSTONE_CONTROLLED);
+    }
+
+    private boolean isInPulseMode() {
+        return getRSMode() == RedstoneMode.SIGNAL_PULSE;
     }
 
     @Override
     public void upgradesChanged() {
-        this.updateState();
+        this.updateRedstoneState();
     }
 
     @Override
-    public void readFromNBT(final net.minecraft.nbt.NBTTagCompound extra) {
+    public void updateSetting(IConfigManager manager, Enum settingName, Enum newValue) {
+        super.updateSetting(manager, settingName, newValue);
+
+        this.updateRedstoneState();
+
+        // Ensure we have an up-to-date last redstone state when pulse mode is activated to
+        // correctly detect subsequent pulses
+        if (isInPulseMode()) {
+            this.lastRedstone = getHost().hasRedstone(this.getSide());
+        }
+    }
+
+    @Override
+    public void readFromNBT(final NBTTagCompound extra) {
         super.readFromNBT(extra);
         this.getConfig().readFromNBT(extra, "config");
+        pendingPulse = isInPulseMode() && extra.getBoolean("pendingPulse");
     }
 
     @Override
-    public void writeToNBT(final net.minecraft.nbt.NBTTagCompound extra) {
+    public void writeToNBT(final NBTTagCompound extra) {
         super.writeToNBT(extra);
         this.getConfig().writeToNBT(extra, "config");
+        if (isInPulseMode() && pendingPulse) {
+            extra.setBoolean("pendingPulse", true);
+        }
+
     }
 
     @Override
@@ -71,12 +113,27 @@ public abstract class PartSharedItemBus extends PartUpgradeable implements IGrid
 
     @Override
     public void onNeighborChanged(IBlockAccess w, BlockPos pos, BlockPos neighbor) {
-        this.updateState();
-        if (this.lastRedstone != this.getHost().hasRedstone(this.getSide())) {
-            this.lastRedstone = !this.lastRedstone;
-            if (this.lastRedstone && this.getRSMode() == RedstoneMode.SIGNAL_PULSE) {
-                this.doBusWork();
+        if (isInPulseMode()) {
+            var hostIsPowered = this.getHost().hasRedstone(this.getSide());
+            if (this.lastRedstone != hostIsPowered) {
+                this.lastRedstone = hostIsPowered;
+                if (this.lastRedstone && !this.pendingPulse) {
+                    // Perform the action based on the pulse on the next tick
+                    this.pendingPulse = true;
+                    alertDevice();
+                }
             }
+        } else {
+            // This handles waking up the bus if the adjacent redstone has changed
+            this.updateRedstoneState();
+        }
+    }
+
+    private void alertDevice() {
+        try {
+            this.getProxy().getTick().alertDevice(this.getProxy().getNode());
+        } catch (final GridAccessException e) {
+            //  Ciallo～(∠・ω< )⌒★
         }
     }
 
@@ -134,7 +191,11 @@ public abstract class PartSharedItemBus extends PartUpgradeable implements IGrid
         return world != null && world.getChunkProvider().getLoadedChunk(xCoordinate >> 4, zCoordinate >> 4) != null;
     }
 
-    private void updateState() {
+    private void updateRedstoneState() {
+        // Clear the pending pulse flag if the upgrade is removed or the config is toggled off
+        if (!this.isInPulseMode()) {
+            this.pendingPulse = false;
+        }
         try {
             if (!this.isSleeping()) {
                 this.getProxy().getTick().wakeDevice(this.getProxy().getNode());
@@ -143,6 +204,55 @@ public abstract class PartSharedItemBus extends PartUpgradeable implements IGrid
             }
         } catch (final GridAccessException e) {
             // :P
+        }
+    }
+
+    @Override
+    protected boolean isSleeping() {
+        if (isInPulseMode() && this.pendingPulse) {
+            return false;
+        } else {
+            return super.isSleeping();
+        }
+    }
+
+    @Override
+    public void addToWorld() {
+        super.addToWorld();
+
+        // To correctly detect pulses (changes from low to high), we need to know the current state when we
+        // are added to the world.
+        this.lastRedstone = this.getHost().hasRedstone(this.getSide());
+        // We may have observed a redstone pulse before, but were unable to act on it due to being unloaded before
+        // we ticked again. Ensure that we do act on this pulse as soon as possible.
+        if (pendingPulse) {
+            alertDevice();
+        }
+    }
+
+    @Override
+    public TickingRequest getTickingRequest(final IGridNode node) {
+        return new TickingRequest(TickRates.ExportBus.getMin(), TickRates.ExportBus.getMax(), this.isSleeping(), true);
+    }
+
+    @Override
+    public TickRateModulation tickingRequest(final IGridNode node, final int ticksSinceLastCall) {
+        // Sometimes between being woken up and actually doing work, the config/redstone mode may have changed
+        // put us back to sleep if that was the case
+        if (this.isSleeping()) {
+            return TickRateModulation.SLEEP;
+        }
+
+        // Reset a potential redstone pulse trigger
+        this.pendingPulse = false;
+
+        TickRateModulation hasDoneWork = this.doBusWork();
+
+        // We may be back to sleep (i.e. in pulse mode)
+        if (isSleeping()) {
+            return TickRateModulation.SLEEP;
+        } else {
+            return hasDoneWork;
         }
     }
 

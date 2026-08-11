@@ -69,9 +69,8 @@ public class PartImportBus extends PartSharedItemBus implements IInventoryDestin
 
     @Reflected
     public PartImportBus(final ItemStack is) {
-        super(is);
+        super(TickRates.ImportBus, is);
 
-        this.getConfigManager().registerSetting(Settings.REDSTONE_CONTROLLED, RedstoneMode.IGNORE);
         this.getConfigManager().registerSetting(Settings.FUZZY_MODE, FuzzyMode.IGNORE_ALL);
         this.source = new MachineSource(this);
     }
@@ -118,16 +117,6 @@ public class PartImportBus extends PartSharedItemBus implements IInventoryDestin
             Platform.openGUI(player, this.getHost().getTile(), this.getSide(), GuiBridge.GUI_BUS);
         }
         return true;
-    }
-
-    @Override
-    public TickingRequest getTickingRequest(final IGridNode node) {
-        return new TickingRequest(TickRates.ImportBus.getMin(), TickRates.ImportBus.getMax(), this.isSleeping(), false);
-    }
-
-    @Override
-    public TickRateModulation tickingRequest(final IGridNode node, final int ticksSinceLastCall) {
-        return this.doBusWork();
     }
 
     @Override
@@ -251,16 +240,6 @@ public class PartImportBus extends PartSharedItemBus implements IInventoryDestin
         }
 
         return toSend;
-    }
-
-    @Override
-    protected boolean isSleeping() {
-        return this.getHandler() == null || super.isSleeping();
-    }
-
-    @Override
-    public RedstoneMode getRSMode() {
-        return (RedstoneMode) this.getConfigManager().getSetting(Settings.REDSTONE_CONTROLLED);
     }
 
     @Override
