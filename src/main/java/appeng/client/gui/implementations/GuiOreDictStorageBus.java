@@ -44,6 +44,18 @@ public class GuiOreDictStorageBus extends GuiUpgradeable {
     }
 
     @Override
+    public void initGui() {
+        Keyboard.enableRepeatEvents(true);
+        super.initGui();
+    }
+
+    @Override
+    public void onGuiClosed() {
+        super.onGuiClosed();
+        Keyboard.enableRepeatEvents(false);
+    }
+
+    @Override
     protected void addButtons() {
         this.searchFieldInputs = new MEGuiTextField(this.fontRenderer, this.guiLeft + 3, this.guiTop + 22, 170, 12);
         this.searchFieldInputs.setEnableBackgroundDrawing(false);
@@ -110,7 +122,7 @@ public class GuiOreDictStorageBus extends GuiUpgradeable {
     @Override
     protected void keyTyped(final char character, final int key) throws IOException {
         if (!this.checkHotbarKeys(key)) {
-            if (key == Keyboard.KEY_RETURN || key == Keyboard.KEY_NUMPADENTER) {
+            if (key == Keyboard.KEY_ESCAPE ||key == Keyboard.KEY_RETURN || key == Keyboard.KEY_NUMPADENTER) {
                 searchFieldInputs.setText(OreDictFilterMatcher.validateExp(searchFieldInputs.getText()));
                 NetworkHandler.instance().sendToServer(new PacketValueConfig("OreDictStorageBus.save", searchFieldInputs.getText()));
             }

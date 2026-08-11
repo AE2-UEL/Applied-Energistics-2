@@ -101,6 +101,7 @@ public class GuiInterfaceConfigurationTerminal extends AEBaseGui implements IJEI
 
     @Override
     public void initGui() {
+        Keyboard.enableRepeatEvents(true);
         super.initGui();
 
         this.getScrollBar().setLeft(189);
@@ -121,6 +122,7 @@ public class GuiInterfaceConfigurationTerminal extends AEBaseGui implements IJEI
     public void onGuiClosed() {
         partInterfaceTerminal.saveSearchStrings(this.searchFieldInputs.getText().toLowerCase());
         super.onGuiClosed();
+        Keyboard.enableRepeatEvents(false);
     }
 
     @Override

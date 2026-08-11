@@ -56,6 +56,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.common.DimensionManager;
 import net.minecraftforge.common.util.Constants;
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
 import java.awt.*;
@@ -118,7 +119,6 @@ public class GuiInterfaceTerminal extends AEBaseGui {
         searchFieldInputs = createTextField(86, 12, ButtonToolTips.SearchFieldInputs.getLocal());
         searchFieldOutputs = createTextField(86, 12, ButtonToolTips.SearchFieldOutputs.getLocal());
         searchFieldNames = createTextField(71, 12, ButtonToolTips.SearchFieldNames.getLocal());
-        searchFieldNames.setFocused(true);
 
         guiButtonAssemblersOnly = new GuiImgButton(0, 0, Settings.ACTIONS, null);
         guiButtonHideFull = new GuiImgButton(0, 0, Settings.ACTIONS, null);
@@ -140,7 +140,6 @@ public class GuiInterfaceTerminal extends AEBaseGui {
         searchFieldInputs = createTextField(86, 12, ButtonToolTips.SearchFieldInputs.getLocal());
         searchFieldOutputs = createTextField(86, 12, ButtonToolTips.SearchFieldOutputs.getLocal());
         searchFieldNames = createTextField(71, 12, ButtonToolTips.SearchFieldNames.getLocal());
-        searchFieldNames.setFocused(true);
 
         guiButtonAssemblersOnly = new GuiImgButton(0, 0, Settings.ACTIONS, null);
         guiButtonHideFull = new GuiImgButton(0, 0, Settings.ACTIONS, null);
@@ -178,6 +177,7 @@ public class GuiInterfaceTerminal extends AEBaseGui {
 
     @Override
     public void initGui() {
+        Keyboard.enableRepeatEvents(true);
         this.rows = calculateRowsCount();
 
         super.initGui();
@@ -193,6 +193,8 @@ public class GuiInterfaceTerminal extends AEBaseGui {
         searchFieldNames.x = guiLeft + 32 + 99;
         searchFieldNames.y = guiTop + 38;
 
+        searchFieldNames.setFocused(true);
+
         terminalStyleBox.x = guiLeft - 18;
         terminalStyleBox.y = guiTop + 8 + jeiButtonPadding;
         guiButtonBrokenRecipes.x = guiLeft - 18;
@@ -204,6 +206,12 @@ public class GuiInterfaceTerminal extends AEBaseGui {
 
         this.setScrollBar();
         this.repositionSlots();
+    }
+
+    @Override
+    public void onGuiClosed() {
+        super.onGuiClosed();
+        Keyboard.enableRepeatEvents(false);
     }
 
     protected void repositionSlots() {
