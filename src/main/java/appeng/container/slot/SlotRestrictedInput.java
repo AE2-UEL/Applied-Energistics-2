@@ -20,7 +20,6 @@ package appeng.container.slot;
 
 
 import appeng.api.AEApi;
-import appeng.api.config.Upgrades;
 import appeng.api.definitions.IDefinitions;
 import appeng.api.definitions.IItems;
 import appeng.api.definitions.IMaterials;
@@ -206,10 +205,7 @@ public class SlotRestrictedInput extends AppEngSlot {
             case UPGRADES:
                 return i.getItem() instanceof IUpgradeModule && ((IUpgradeModule) i.getItem()).getType(i) != null;
             case CARD_QUANTUM:
-                if (AEApi.instance().definitions().materials().cardQuantumLink().maybeItem().isPresent()) {
-                    return AEApi.instance().definitions().materials().cardQuantumLink().maybeItem().get() == i.getItem();
-                }
-                return false;
+                return materials.cardQuantumLink().isSameAs(i);
             default:
                 break;
         }
