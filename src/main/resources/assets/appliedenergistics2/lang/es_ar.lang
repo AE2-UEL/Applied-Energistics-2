@@ -470,7 +470,7 @@ theoneprobe.appliedenergistics2.p2p_output_one_input=Vinculado (Lado de Salida) 
 theoneprobe.appliedenergistics2.p2p_output_many_inputs=Vinculado (Lado de Salida) - §2%d§r Entradas
 theoneprobe.appliedenergistics2.p2p_output=Vinculado (Lado de Salida)
 theoneprobe.appliedenergistics2.p2p_frequency=Frecuencia: §5%1$s§r
-theoneprobe.appliedenergistics2.stored_energy=§2%1$d§к / §4%2$d§r
+theoneprobe.appliedenergistics2.stored_energy=§2%1$d§r / §4%2$d§r
 
 // Objetos
 item.appliedenergistics2.storage_cell_1k.name=Unidad de Almacenamiento ME (§61k§r)
