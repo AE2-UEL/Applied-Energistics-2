@@ -169,7 +169,7 @@ public final class Tooltips {
     public static ITextComponent energyStorageComponent(double energy, double max) {
         return Tooltips.of(
                 Tooltips.of(GuiText.StoredEnergy.getLocal()),
-                Tooltips.of(": "),
+                Tooltips.of(": ").setStyle(NORMAL_TOOLTIP_TEXT),
                 Tooltips.ofNumber(energy, max),
                 Tooltips.of(" "),
                 Tooltips.of(PowerUnits.AE),
