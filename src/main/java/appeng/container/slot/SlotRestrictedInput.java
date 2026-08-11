@@ -20,7 +20,6 @@ package appeng.container.slot;
 
 
 import appeng.api.AEApi;
-import appeng.api.config.Upgrades;
 import appeng.api.definitions.IDefinitions;
 import appeng.api.definitions.IItems;
 import appeng.api.definitions.IMaterials;
@@ -43,8 +42,6 @@ import net.minecraft.tileentity.TileEntityFurnace;
 import net.minecraft.world.World;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.oredict.OreDictionary;
-
-import java.util.Optional;
 
 
 /**
