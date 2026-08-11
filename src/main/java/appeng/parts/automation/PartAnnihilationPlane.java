@@ -455,7 +455,7 @@ public class PartAnnihilationPlane extends PartBasicState implements IGridTickab
             if (item != Items.AIR) {
                 int meta = 0;
                 if (item.getHasSubtypes()) {
-                    meta = state.getBlock().getMetaFromState(state);
+                    meta = state.getBlock().damageDropped(state);
                 }
                 final ItemStack itemstack = new ItemStack(item, 1, meta);
                 out.add(itemstack);
