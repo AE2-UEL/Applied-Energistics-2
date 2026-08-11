@@ -267,13 +267,23 @@ public class PartFluidStorageBus extends PartUpgradeable implements IGridTickabl
             // In case the TE was destroyed, we have to do a full reset immediately.
             if (te instanceof TileCableBus) {
                 IPart iPart = ((TileCableBus) te).getPart(this.getSide().getOpposite());
-                if (iPart == null || iPart instanceof PartFluidInterface) {
+                if (iPart == null) {
+                    this.resetCache(true);
+                    this.resetCache();
+                } else if (iPart instanceof PartFluidInterface) {
+                    if (createHandlerHash(te) != handlerHash) {
+                        this.resetCache(true);
+                        this.resetCache();
+                    }
+                }
+            } else if (te == null) {
+                this.resetCache(true);
+                this.resetCache();
+            } else if (te instanceof TileFluidInterface) {
+                if (createHandlerHash(te) != handlerHash) {
                     this.resetCache(true);
                     this.resetCache();
                 }
-            } else if (te == null || te instanceof TileFluidInterface) {
-                this.resetCache(true);
-                this.resetCache();
             } else {
                 this.resetCache(false);
             }
