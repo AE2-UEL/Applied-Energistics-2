@@ -79,6 +79,7 @@ import static appeng.client.KeyBindings.*;
 
 public class ClientHelper extends ServerHelper {
     public final static String KEY_CATEGORY = "key.appliedenergistics2.category";
+    public static boolean isHei = false;
 
     private final EnumMap<ActionKey, KeyBinding> bindings = new EnumMap<>(ActionKey.class);
     private final List<KeyBinding> keyBindings = new ArrayList<>();
@@ -89,6 +90,17 @@ public class ClientHelper extends ServerHelper {
         // Do not register the Fullbright hacks if Optifine is present or if the Forge lighting is disabled
         if (!FMLClientHandler.instance().hasOptifine() && ForgeModContainer.forgeLightPipelineEnabled) {
             ModelLoaderRegistry.registerLoader(UVLModelLoader.INSTANCE);
+        }
+
+        // This is very cursed, but it effectively determines if we are on hei,
+        // and on a new enough version that the ghost ingredient handler supports the bookmarks tab
+        if (Platform.isModLoaded("jei")) {
+            try {
+                Class.forName("mezz.jei.bookmarks.BookmarkItem");
+                isHei = true;
+            } catch (ClassNotFoundException ignored) {
+                isHei = false;
+            }
         }
 
         RenderingRegistry.registerEntityRenderingHandler(EntityTinyTNTPrimed.class, manager -> new RenderTinyTNTPrimed(manager));
@@ -291,6 +303,9 @@ public class ClientHelper extends ServerHelper {
 
     @SubscribeEvent
     public void MouseClickEvent(final GuiScreenEvent.MouseInputEvent.Pre me) {
+        // Only cancel JEI's bookmark handling if we are NOT on hei
+        if (isHei) return;
+
         final Minecraft mc = Minecraft.getMinecraft();
         if (mc.currentScreen instanceof IJEIGhostIngredients) {
             AEBaseGui gui = ((AEBaseGui) mc.currentScreen);

@@ -21,6 +21,7 @@ package appeng.client.gui;
 
 import appeng.api.storage.data.IAEFluidStack;
 import appeng.api.storage.data.IAEItemStack;
+import appeng.client.ClientHelper;
 import appeng.client.gui.widgets.GuiCustomSlot;
 import appeng.client.gui.widgets.GuiScrollbar;
 import appeng.client.gui.widgets.ITooltip;
@@ -190,7 +191,7 @@ public abstract class AEBaseGui extends GuiContainer implements IMTModGuiContain
             }
         }
         GlStateManager.enableDepth();
-        if (Platform.isModLoaded("jei")) {
+        if (Platform.isModLoaded("jei") && !ClientHelper.isHei) {
             bookmarkedJEIghostItem(mouseX, mouseY);
         }
         GlStateManager.disableDepth();

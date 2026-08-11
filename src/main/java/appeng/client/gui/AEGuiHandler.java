@@ -1,6 +1,7 @@
 package appeng.client.gui;
 
 import appeng.api.storage.data.IAEItemStack;
+import appeng.client.ClientHelper;
 import appeng.client.gui.implementations.GuiCraftAmount;
 import appeng.client.gui.implementations.GuiCraftConfirm;
 import appeng.client.gui.implementations.GuiCraftingCPU;
@@ -11,17 +12,21 @@ import appeng.client.gui.widgets.GuiCustomSlot;
 import appeng.container.interfaces.IJEIGhostIngredients;
 import appeng.container.interfaces.ISpecialSlotIngredient;
 import appeng.container.slot.IJEITargetSlot;
+import appeng.core.AELog;
 import mezz.jei.api.gui.IAdvancedGuiHandler;
 import mezz.jei.api.gui.IGhostIngredientHandler;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.inventory.Slot;
+import org.jetbrains.annotations.NotNull;
 import org.lwjgl.input.Mouse;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.awt.*;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 
@@ -118,25 +123,51 @@ public class AEGuiHandler implements IAdvancedGuiHandler<AEBaseGui>, IGhostIngre
     @Override
     @Nonnull
     public <I> List<Target<I>> getTargets(@Nonnull AEBaseGui gui, @Nonnull I ingredient, boolean doStart) {
-        ArrayList<Target<I>> targets = new ArrayList<>();
-        if (gui instanceof IJEIGhostIngredients g) {
-            List<Target<?>> phantomTargets = g.getPhantomTargets(ingredient);
-            targets.addAll((List<Target<I>>) (Object) phantomTargets);
-        }
-        if (doStart && GuiScreen.isShiftKeyDown() && Mouse.isButtonDown(0)) {
-            if (gui instanceof GuiUpgradeable || gui instanceof GuiPatternTerm || gui instanceof GuiExpandedProcessingPatternTerm) {
-                IJEIGhostIngredients ghostGui = ((IJEIGhostIngredients) gui);
-                for (Target<I> target : targets) {
-                    if (ghostGui.getFakeSlotTargetMap().get(target) instanceof IJEITargetSlot jeiSlot) {
-                        if (jeiSlot.needAccept()) {
-                            target.accept(ingredient);
-                            break;
+        if (!(gui instanceof IJEIGhostIngredients g)) return Collections.emptyList();
+
+        // HEI Specific Behaviour
+        if (ClientHelper.isHei) {
+            Object ingToUse = getIngFromBookmarkItem(ingredient);
+            if (ingToUse != null) {
+                List<Target<Object>> phantomTargets = (List<Target<Object>>) (Object) g.getPhantomTargets(ingToUse);
+
+                List<Target<I>> result = new ArrayList<>();
+                for (Target<Object> target : phantomTargets) {
+                    result.add(new Target<>() {
+                        @Override
+                        public @NotNull Rectangle getArea() {
+                            return target.getArea();
                         }
-                    }
+
+                        @Override
+                        public void accept(@NotNull I ingredient) {
+                            Object ingToUse = getIngFromBookmarkItem(ingredient);
+                            if (ingToUse != null) {
+                                target.accept(ingToUse);
+                            }
+                        }
+                    });
                 }
+
+                return result;
             }
         }
-        return targets;
+
+        return (List<Target<I>>) (Object) g.getPhantomTargets(ingredient);
+    }
+
+    @Nullable
+    private Object getIngFromBookmarkItem(Object ingredient) {
+        try {
+            Class<?> bookmarkItemClass = Class.forName("mezz.jei.bookmarks.BookmarkItem");
+            if (bookmarkItemClass.isAssignableFrom(ingredient.getClass())) {
+                Field ingredientField = bookmarkItemClass.getDeclaredField("ingredient");
+                return ingredientField.get(ingredient);
+            }
+        } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
+            AELog.error("Could not normalise bookmark item ingredient: ", e);
+        }
+        return null;
     }
 
     @Override

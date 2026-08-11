@@ -55,6 +55,7 @@ import net.minecraft.nbt.NBTUtil;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraftforge.common.DimensionManager;
+import net.minecraftforge.fluids.FluidStack;
 import org.lwjgl.input.Mouse;
 
 import java.awt.*;
@@ -459,13 +460,13 @@ public class GuiFluidInterfaceConfigurationTerminal extends AEBaseGui implements
 
     @Override
     public List<IGhostIngredientHandler.Target<?>> getPhantomTargets(Object ingredient) {
-        if (!(ingredient instanceof ItemStack)) {
+        if (!(ingredient instanceof FluidStack)) {
             return Collections.emptyList();
         }
         List<IGhostIngredientHandler.Target<?>> targets = new ArrayList<>();
         for (Slot slot : this.inventorySlots.inventorySlots) {
             if (slot instanceof SlotDisconnected) {
-                ItemStack itemStack = (ItemStack) ingredient;
+                FluidStack fluidStack = (FluidStack) ingredient;
                 IGhostIngredientHandler.Target<Object> target = new IGhostIngredientHandler.Target<Object>() {
                     @Override
                     public Rectangle getArea() {
@@ -476,7 +477,7 @@ public class GuiFluidInterfaceConfigurationTerminal extends AEBaseGui implements
                     public void accept(Object ingredient) {
                         final PacketInventoryAction p;
                         try {
-                            p = new PacketInventoryAction(InventoryAction.PLACE_JEI_GHOST_ITEM, (SlotDisconnected) slot, AEItemStack.fromItemStack(itemStack));
+                            p = new PacketInventoryAction(InventoryAction.PLACE_JEI_GHOST_ITEM, (SlotDisconnected) slot, AEItemStack.fromItemStack(AEFluidStack.fromFluidStack(fluidStack).asItemStackRepresentation()));
                             NetworkHandler.instance().sendToServer(p);
 
                         } catch (IOException e) {
