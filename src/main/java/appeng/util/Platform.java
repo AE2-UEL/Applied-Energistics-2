@@ -1199,10 +1199,16 @@ public class Platform {
         }
     }
 
+    private static boolean bothUsingDefaultSecurity(GridNode a, GridNode b) {
+        return a.getLastSecurityKey() == -1 && b.getLastSecurityKey() == -1;
+    }
+
+    private static boolean securityKeysMatch(GridNode a, GridNode b) {
+        return a.getLastSecurityKey() == b.getLastSecurityKey();
+    }
+
     public static boolean securityCheck(final GridNode a, final GridNode b) {
-        if (a.getLastSecurityKey() == -1 && b.getLastSecurityKey() == -1) {
-            return true;
-        } else if (a.getLastSecurityKey() == b.getLastSecurityKey()) {
+        if (bothUsingDefaultSecurity(a, b) || securityKeysMatch(a, b)) {
             return true;
         }
 
@@ -1464,14 +1470,26 @@ public class Platform {
     // }
     // }
 
+
     public static boolean isRecipePrioritized(final ItemStack what) {
-        final IMaterials materials = AEApi.instance().definitions().materials();
+        return isPurifiedCertus(what) ||
+                isPurifiedFluix(what) ||
+                isPurifiedNetherQuartz(what);
+    }
 
-        boolean isPurified = materials.purifiedCertusQuartzCrystal().isSameAs(what);
-        isPurified |= materials.purifiedFluixCrystal().isSameAs(what);
-        isPurified |= materials.purifiedNetherQuartzCrystal().isSameAs(what);
+    private static boolean isPurifiedCertus(ItemStack stack) {
+        return AEApi.instance().definitions().materials()
+                .purifiedCertusQuartzCrystal().isSameAs(stack);
+    }
 
-        return isPurified;
+    private static boolean isPurifiedFluix(ItemStack stack) {
+        return AEApi.instance().definitions().materials()
+                .purifiedFluixCrystal().isSameAs(stack);
+    }
+
+    private static boolean isPurifiedNetherQuartz(ItemStack stack) {
+        return AEApi.instance().definitions().materials()
+                .purifiedNetherQuartzCrystal().isSameAs(stack);
     }
 
     //consider methods below moving to a compability class

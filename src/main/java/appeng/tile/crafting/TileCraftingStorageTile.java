@@ -32,30 +32,11 @@ public class TileCraftingStorageTile extends TileCraftingTile {
 
     @Override
     protected ItemStack getItemFromTile(final Object obj) {
-        final IBlocks blocks = AEApi.instance().definitions().blocks();
-        final int storage = ((TileCraftingTile) obj).getStorageBytes() / KILO_SCALAR;
+        final int storageKiloBytes = ((TileCraftingTile) obj).getStorageBytes() / KILO_SCALAR;
 
-        Optional<ItemStack> is;
-
-        switch (storage) {
-            case 1:
-                is = blocks.craftingStorage1k().maybeStack(1);
-                break;
-            case 4:
-                is = blocks.craftingStorage4k().maybeStack(1);
-                break;
-            case 16:
-                is = blocks.craftingStorage16k().maybeStack(1);
-                break;
-            case 64:
-                is = blocks.craftingStorage64k().maybeStack(1);
-                break;
-            default:
-                is = Optional.empty();
-                break;
-        }
-
-        return is.orElseGet(() -> super.getItemFromTile(obj));
+        return CraftingStorageType.fromKiloBytes(storageKiloBytes)
+                .flatMap(CraftingStorageType::getItemStack)
+                .orElseGet(() -> super.getItemFromTile(obj));
     }
 
     @Override
@@ -74,17 +55,9 @@ public class TileCraftingStorageTile extends TileCraftingTile {
             return 0;
         }
 
-        final BlockCraftingUnit unit = (BlockCraftingUnit) this.world.getBlockState(this.pos).getBlock();
-        switch (unit.type) {
-            default:
-            case STORAGE_1K:
-                return 1024;
-            case STORAGE_4K:
-                return 4 * 1024;
-            case STORAGE_16K:
-                return 16 * 1024;
-            case STORAGE_64K:
-                return 64 * 1024;
-        }
+        final int kiloBytes = this.getStorageBytes() / KILO_SCALAR;
+        return CraftingStorageType.fromKiloBytes(kiloBytes)
+                .map(CraftingStorageType::getStorageBytes)
+                .orElse(0);
     }
 }
