@@ -21,7 +21,6 @@ package appeng.client.render.model;
 
 import appeng.block.misc.BlockSkyCompass;
 import appeng.hooks.CompassManager;
-import appeng.hooks.CompassResult;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.renderer.block.model.BakedQuad;
@@ -34,6 +33,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
 import net.minecraftforge.client.model.pipeline.UnpackedBakedQuad;
 import net.minecraftforge.common.property.IExtendedBlockState;
@@ -51,6 +51,9 @@ import java.util.List;
  * around the Y-axis to get the compass to point in the right direction.
  */
 public class SkyCompassBakedModel implements IBakedModel {
+
+    // The square distance to be within range of a meteor
+    private static final int MIN_DIST_SQ = 2;
 
     private final IBakedModel base;
 
@@ -164,26 +167,23 @@ public class SkyCompassBakedModel implements IBakedModel {
 
         // Only query for a meteor position if we know our own position
         if (pos != null) {
-            CompassResult cr = CompassManager.INSTANCE.getCompassDirection(0, pos.getX(), pos.getY(), pos.getZ());
+            var ourChunkPos = new ChunkPos(pos);
+            var closestMeteorite = CompassManager.INSTANCE.getClosestMeteorite(ourChunkPos, prefetch);
 
-            // Prefetch meteor positions from the server for adjacent blocks so they are available more quickly when
-            // we're moving
-            if (prefetch) {
-                for (int i = 0; i < 3; i++) {
-                    for (int j = 0; j < 3; j++) {
-                        CompassManager.INSTANCE.getCompassDirection(0, pos.getX() + i - 1, pos.getY(), pos.getZ() + j - 1);
-                    }
-                }
-            }
-
-            if (cr.isValidResult()) {
-                if (cr.isSpin()) {
-                    long timeMillis = System.currentTimeMillis();
-                    // .5 seconds per full rotation
-                    timeMillis %= 500;
-                    return timeMillis / 500.f * (float) Math.PI * 2;
-                } else {
-                    return (float) cr.getRad();
+            // No close meteorite was found -> spin slowly
+            if (closestMeteorite == null) {
+                long timeMillis = System.currentTimeMillis();
+                // .5 seconds per full rotation
+                timeMillis %= 500;
+                return timeMillis / 500.f * (float) Math.PI * 2;
+            } else {
+                var dx = pos.getX() - closestMeteorite.getX();
+                var dz = pos.getZ() - closestMeteorite.getZ();
+                var distanceSq = dx * dx + dz * dz;
+                if (distanceSq > MIN_DIST_SQ) {
+                    var x = closestMeteorite.getX();
+                    var z = closestMeteorite.getZ();
+                    return (float) rad(pos.getX(), pos.getZ(), x, z);
                 }
             }
         }
@@ -192,5 +192,12 @@ public class SkyCompassBakedModel implements IBakedModel {
         // 3 seconds per full rotation
         timeMillis %= 3000;
         return timeMillis / 3000.f * (float) Math.PI * 2;
+    }
+
+    private static double rad(int ax, int az, int bx, int bz) {
+        var up = bz - az;
+        var side = bx - ax;
+
+        return Math.atan2(-up, side) - Math.PI / 2.0;
     }
 }

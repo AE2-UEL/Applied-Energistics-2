@@ -12,6 +12,10 @@ This project started as a fork of [Applied Energistics 2](https://github.com/App
 
 See [Releases](https://github.com/PrototypeTrousers/Applied-Energistics-2/releases) for the compiled jars.
 
+## Loot Tables
+Meteorite loot is now handled through loot tables, allowing pack developers to customize and/or replace it. 
+See the [README](/src/main/java/appeng/loot/README.md) in `loot` for more details.
+
 ## RecipeStages
 
 You need to add the following into a CraftTweaker script:

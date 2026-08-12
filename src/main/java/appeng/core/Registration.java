@@ -59,7 +59,7 @@ import appeng.hooks.WrenchClickHook;
 import appeng.items.materials.ItemMaterial;
 import appeng.items.parts.ItemFacade;
 import appeng.items.parts.ItemPart;
-import appeng.loot.ChestLoot;
+import appeng.loot.*;
 import appeng.me.cache.*;
 import appeng.recipes.AEItemResolver;
 import appeng.recipes.AERecipeLoader;
@@ -71,7 +71,10 @@ import appeng.spatial.StorageWorldProvider;
 import appeng.tile.AEBaseTile;
 import appeng.worldgen.MeteoriteWorldGen;
 import appeng.worldgen.QuartzWorldGen;
+import appeng.worldgen.meteorite.MeteorConstants;
+import appeng.worldgen.meteorite.heightmap.HeightMapAccessors;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.advancements.ICriterionInstance;
 import net.minecraft.advancements.ICriterionTrigger;
@@ -85,6 +88,9 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.DimensionType;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
+import net.minecraft.world.storage.loot.LootTableList;
+import net.minecraft.world.storage.loot.conditions.LootConditionManager;
+import net.minecraft.world.storage.loot.functions.LootFunctionManager;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.common.DimensionManager;
@@ -117,6 +123,7 @@ final class Registration {
     int storageDimensionID;
     Biome storageBiome;
     AdvancementTriggers advancementTriggers;
+    MeteoriteWorldGen meteoriteGen;
 
     void preInitialize(final FMLPreInitializationEvent event) {
         Capabilities.register();
@@ -196,6 +203,19 @@ final class Registration {
 
         if (AEConfig.instance().isFeatureEnabled(AEFeature.CHEST_LOOT)) {
             MinecraftForge.EVENT_BUS.register(new ChestLoot());
+        }
+        // Meteor loot table
+        // Check sky stone feature here because the loot table could error otherwise. It doesn't make much sense anyway
+        // to register meteor loot when the meteor wouldn't even generate properly.
+        if (AEConfig.instance().areFeaturesEnabled(ImmutableList.of(
+                AEFeature.METEORITE_WORLD_GEN,
+                AEFeature.SKY_STONE))) {
+            LootTableList.register(new ResourceLocation(AppEng.MOD_ID,
+                    MeteorConstants.METEOR_LOOT_TABLE));
+            LootConditionManager.registerCondition(new CheckTally.Serializer());
+            LootConditionManager.registerCondition(new FeatureEnabled.Serializer());
+            LootFunctionManager.registerFunction(new Tally.Serializer());
+            LootFunctionManager.registerFunction(new ToRandomOre.Serializer());
         }
 
         final IGridCacheRegistry gcr = registries.gridCache();
@@ -468,7 +488,12 @@ final class Registration {
         }
 
         if (AEConfig.instance().isFeatureEnabled(AEFeature.METEORITE_WORLD_GEN)) {
-            GameRegistry.registerWorldGenerator(new MeteoriteWorldGen(), 0);
+            this.meteoriteGen = new MeteoriteWorldGen();
+            GameRegistry.registerWorldGenerator(meteoriteGen, AEConfig.instance().getMeteoriteGeneratorPriority());
+            meteoriteGen.registerStructure();
+            MinecraftForge.EVENT_BUS.register(meteoriteGen);
+            MinecraftForge.TERRAIN_GEN_BUS.register(HeightMapAccessors.class);
+            MinecraftForge.EVENT_BUS.register(HeightMapAccessors.class);
         }
 
         final IMovableRegistry mr = registries.movable();

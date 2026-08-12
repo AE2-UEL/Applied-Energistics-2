@@ -26,6 +26,7 @@ import appeng.api.util.AEPartLocation;
 import appeng.api.util.WorldCoord;
 import appeng.core.AELog;
 import appeng.core.worlddata.WorldData;
+import appeng.services.compass.ServerCompassService;
 import appeng.util.Platform;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
@@ -34,6 +35,7 @@ import net.minecraft.util.ITickable;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.NextTickListEntry;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldServer;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
 
@@ -310,9 +312,7 @@ public class CachedPlane {
 
                 final Chunk c = this.myChunks[x][z];
 
-                for (int y = 1; y < 255; y += 32) {
-                    WorldData.instance().compassData().service().updateArea(this.getWorld(), c.x << 4, y, c.z << 4);
-                }
+                ServerCompassService.updateArea((WorldServer) this.getWorld(), c.getPos());
 
                 Platform.sendChunk(c, this.verticalBits);
             }

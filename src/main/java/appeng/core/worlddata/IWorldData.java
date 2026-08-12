@@ -19,6 +19,8 @@
 package appeng.core.worlddata;
 
 
+import appeng.services.compass.converter.CompassDataConverter;
+
 import javax.annotation.Nonnull;
 
 
@@ -37,10 +39,4 @@ public interface IWorldData {
 
     @Nonnull
     IWorldPlayerData playerData();
-
-    @Nonnull
-    IWorldCompassData compassData();
-
-    @Nonnull
-    IWorldSpawnData spawnData();
 }

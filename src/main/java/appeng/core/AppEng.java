@@ -39,6 +39,7 @@ import appeng.services.export.ExportProcess;
 import appeng.services.export.ForgeExportConfig;
 import appeng.services.version.VersionCheckerConfig;
 import appeng.util.Platform;
+import appeng.worldgen.MeteoriteWorldGen;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import net.minecraft.world.DimensionType;
@@ -117,6 +118,10 @@ public final class AppEng {
 
     public AdvancementTriggers getAdvancementTriggers() {
         return this.registration.advancementTriggers;
+    }
+
+    public MeteoriteWorldGen getMeteoriteGen() {
+        return this.registration.meteoriteGen;
     }
 
     @EventHandler

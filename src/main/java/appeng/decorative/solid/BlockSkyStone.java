@@ -20,14 +20,9 @@ package appeng.decorative.solid;
 
 
 import appeng.block.AEBaseBlock;
-import appeng.core.worlddata.WorldData;
-import appeng.util.Platform;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.state.IBlockState;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -65,23 +60,6 @@ public class BlockSkyStone extends AEBaseBlock {
             if (this.type != SkystoneType.STONE || level >= 3 || event.getOriginalSpeed() > BREAK_SPEAK_THRESHOLD) {
                 event.setNewSpeed(event.getNewSpeed() / BREAK_SPEAK_SCALAR);
             }
-        }
-    }
-
-    @Override
-    public void onBlockAdded(final World w, final BlockPos pos, final IBlockState state) {
-        super.onBlockAdded(w, pos, state);
-        if (Platform.isServer()) {
-            WorldData.instance().compassData().service().updateArea(w, pos.getX(), pos.getY(), pos.getZ());
-        }
-    }
-
-    @Override
-    public void breakBlock(final World w, final BlockPos pos, final IBlockState state) {
-        super.breakBlock(w, pos, state);
-
-        if (Platform.isServer()) {
-            WorldData.instance().compassData().service().updateArea(w, pos.getX(), pos.getY(), pos.getZ());
         }
     }
 

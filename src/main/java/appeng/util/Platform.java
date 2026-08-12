@@ -168,6 +168,25 @@ public class Platform {
     }
 
     /**
+     * Seed a random number generator from a world seed and grid location.
+     * The grid can be any arbitrary set of coordinates, e.g. chunk position or block position.
+     * This method guarantees that for the same inputs (worldSeed, x, z) the same seed will be used.
+     *
+     * @param rng The generator to re-seed.
+     * @param worldSeed Global seed independent of the grid position
+     * @param x X location in the grid
+     * @param z Z location in the grid
+     * @param offset An offset to apply to the final seed
+     */
+    public static void seedFromGrid(final Random rng, final long worldSeed, final long x, final long z, final int offset) {
+        rng.setSeed(worldSeed);
+        final long xSeed = rng.nextLong() >> 2 + 1L;
+        final long zSeed = rng.nextLong() >> 2 + 1L;
+        final long gridSeed = (xSeed * x + zSeed * z) ^ worldSeed;
+        rng.setSeed(gridSeed + offset);
+    }
+
+    /**
      * This displays the value for encoded longs ( double *100 )
      *
      * @param n      to be formatted long value
