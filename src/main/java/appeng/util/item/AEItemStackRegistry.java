@@ -23,16 +23,14 @@
 
 package appeng.util.item;
 
-import com.google.common.collect.MapMaker;
 import net.minecraft.item.ItemStack;
 
 import javax.annotation.Nonnull;
-import java.util.Map;
+import java.lang.ref.WeakReference;
+import java.util.WeakHashMap;
 
 public final class AEItemStackRegistry {
-
-    private static final ItemStackHashStrategy HASH_STRATEGY = ItemStackHashStrategy.comparingAllButCount();
-    private static final Map<Integer, AESharedItemStack> REGISTRY = new MapMaker().weakValues().makeMap();
+    private static final WeakHashMap<AESharedItemStack, WeakReference<AESharedItemStack>> REGISTRY = new WeakHashMap<>();
 
     private AEItemStackRegistry() {
     }
@@ -42,18 +40,23 @@ public final class AEItemStackRegistry {
             throw new IllegalArgumentException("stack cannot be empty");
         }
 
-        var hash = HASH_STRATEGY.hashCode(itemStack);
-        var ret = REGISTRY.get(hash);
-        if (ret != null) {
-            return ret;
+        int oldStackSize = itemStack.getCount();
+        itemStack.setCount(1);
+
+        AESharedItemStack search = new AESharedItemStack(itemStack);
+        WeakReference<AESharedItemStack> weak = REGISTRY.get(search);
+        AESharedItemStack ret = null;
+
+        if (weak != null) {
+            ret = weak.get();
         }
 
-        // computeIfAbsent is not feasible since new AESharedItemStack gets
-        // instantly GC'd when leaving the lambda.
-        var itemStackCopy = itemStack.copy();
-        itemStackCopy.setCount(1);
-        var sharedStack = new AESharedItemStack(itemStackCopy);
-        REGISTRY.put(hash, sharedStack);
-        return sharedStack;
+        if (ret == null) {
+            ret = new AESharedItemStack(itemStack.copy());
+            REGISTRY.put(ret, new WeakReference<>(ret));
+        }
+        itemStack.setCount(oldStackSize);
+
+        return ret;
     }
 }
