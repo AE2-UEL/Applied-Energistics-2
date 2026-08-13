@@ -78,7 +78,7 @@ public class GuiImgLabel extends GuiLabel implements ITooltip {
     public String getMessage() {
         LabelAppearance labelAppearance = appearances.get(new GuiImgButton.EnumPair(this.labelSetting, this.currentValue));
         if (labelAppearance == null) {
-            return "No Such Message";
+            return null;
         }
 
         return I18n.format(labelAppearance.title) + "\n" + I18n.format(labelAppearance.hiddenValue);
