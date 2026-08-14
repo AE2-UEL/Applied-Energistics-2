@@ -53,7 +53,6 @@ public class ItemRepo {
 
     private String searchString = "";
     private IPartitionList<IAEItemStack> myPartitionList;
-    private String innerSearch = "";
     private boolean hasPower;
 
     private Enum lastView;
@@ -155,8 +154,32 @@ public class ItemRepo {
 
             Comparator<IAEItemStack> c = getComparator(sortBy);
 
+            String innerSearch = searchString.toLowerCase();
+
+            final boolean searchMod;
+            if (innerSearch.startsWith("@")) {
+                searchMod = true;
+                innerSearch = innerSearch.substring(1);
+            } else {
+                searchMod = false;
+            }
+
+            final boolean terminalSearchToolTips = AEConfig.instance().getConfigManager().getSetting(Settings.SEARCH_TOOLTIPS) != YesNo.NO;
+
+            Pattern m;
+            try {
+                m = Pattern.compile(innerSearch, Pattern.CASE_INSENSITIVE);
+            } catch (final Throwable ignore) {
+                try {
+                    m = Pattern.compile(Pattern.quote(innerSearch), Pattern.CASE_INSENSITIVE);
+                } catch (final Throwable __) {
+                    return;
+                }
+            }
+
+            String[] innerSearchTerms = innerSearch.split(" ");
             for (IAEItemStack is : this.list) {
-                addIAE(is, viewMode);
+                addIAE(is, viewMode, innerSearchTerms, searchMod, terminalSearchToolTips, m);
             }
 
             view.sort(c);
@@ -182,30 +205,9 @@ public class ItemRepo {
         return c;
     }
 
-    private void addIAE(IAEItemStack is, Enum viewMode) {
+    private void addIAE(IAEItemStack is, Enum viewMode, String[] terms, boolean searchMod, boolean searchTooltips, Pattern pattern) {
 
         final boolean needsZeroCopy = viewMode == ViewItems.CRAFTABLE;
-
-        final boolean terminalSearchToolTips = AEConfig.instance().getConfigManager().getSetting(Settings.SEARCH_TOOLTIPS) != YesNo.NO;
-
-        boolean searchMod = false;
-
-        this.innerSearch = searchString.toLowerCase();
-        if (this.innerSearch.startsWith("@")) {
-            searchMod = true;
-            this.innerSearch = this.innerSearch.substring(1);
-        }
-
-        Pattern m = null;
-        try {
-            m = Pattern.compile(this.innerSearch, Pattern.CASE_INSENSITIVE);
-        } catch (final Throwable ignore) {
-            try {
-                m = Pattern.compile(Pattern.quote(this.innerSearch), Pattern.CASE_INSENSITIVE);
-            } catch (final Throwable __) {
-                return;
-            }
-        }
 
         if (this.myPartitionList != null) {
             if (!this.myPartitionList.isListed(is)) {
@@ -224,7 +226,7 @@ public class ItemRepo {
         final String dspName = (searchMod ? Platform.getModId(is) : Platform.getItemDisplayName(is)).toLowerCase();
         boolean foundMatchingItemStack = true;
 
-        for (String term : innerSearch.split(" ")) {
+        for (String term : terms) {
             if (term.length() > 1 && (term.startsWith("-") || term.startsWith("!"))) {
                 term = term.substring(1);
                 if (dspName.contains(term)) {
@@ -237,10 +239,10 @@ public class ItemRepo {
             }
         }
 
-        if (terminalSearchToolTips && !foundMatchingItemStack) {
+        if (searchTooltips && !foundMatchingItemStack) {
             final List<String> tooltip = Platform.getTooltip(is);
             for (final String line : tooltip) {
-                if (m.matcher(line).find()) {
+                if (pattern.matcher(line).find()) {
                     foundMatchingItemStack = true;
                     break;
                 }
