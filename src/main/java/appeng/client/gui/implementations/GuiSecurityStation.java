@@ -48,7 +48,6 @@ public class GuiSecurityStation extends GuiMEMonitorable {
 
         // increase size so that the slot is over the gui.
         this.xSize += 56;
-        this.setStandardSize(this.xSize);
     }
 
     @Override

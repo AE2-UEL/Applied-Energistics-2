@@ -71,7 +71,7 @@ public enum Settings
 
 	LEVEL_TYPE( EnumSet.allOf( LevelType.class ) ),
 
-	TERMINAL_STYLE( EnumSet.of( TerminalStyle.TALL, TerminalStyle.SMALL ) ),
+	TERMINAL_STYLE( EnumSet.of( TerminalStyle.FULL, TerminalStyle.TALL, TerminalStyle.MEDIUM, TerminalStyle.SMALL ) ),
 
 	COPY_MODE( EnumSet.allOf( CopyMode.class ) ),
 

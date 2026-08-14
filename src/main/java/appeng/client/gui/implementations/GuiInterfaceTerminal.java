@@ -74,8 +74,8 @@ public class GuiInterfaceTerminal extends AEBaseGui {
     private static final int MAGIC_HEIGHT_NUMBER = 52 + 99;
     private static final String MOLECULAR_ASSEMBLER = "tile.appliedenergistics2.molecular_assembler";
 
-    private final boolean jeiEnabled;
-    private final int jeiButtonPadding;
+    // To make JEI look nicer. Otherwise, the buttons will make JEI in a strange place.
+    private final int jeiOffset = Platform.isJEIEnabled() ? 24 : 0;
 
     private final HashMap<Long, ClientDCInternalInv> byId = new HashMap<>();
     private final HashMultimap<String, ClientDCInternalInv> byName = HashMultimap.create();
@@ -112,8 +112,6 @@ public class GuiInterfaceTerminal extends AEBaseGui {
         this.setScrollBar(scrollbar);
         this.xSize = 208;
         this.ySize = 255;
-        this.jeiEnabled = Platform.isModLoaded("jei");
-        this.jeiButtonPadding = jeiEnabled ? 22 : 0;
 
         searchFieldInputs = createTextField(86, 12, ButtonToolTips.SearchFieldInputs.getLocal());
         searchFieldOutputs = createTextField(86, 12, ButtonToolTips.SearchFieldOutputs.getLocal());
@@ -134,8 +132,6 @@ public class GuiInterfaceTerminal extends AEBaseGui {
         this.setScrollBar(scrollbar);
         this.xSize = 208;
         this.ySize = 255;
-        this.jeiEnabled = Platform.isModLoaded("jei");
-        this.jeiButtonPadding = jeiEnabled ? 22 : 0;
 
         searchFieldInputs = createTextField(86, 12, ButtonToolTips.SearchFieldInputs.getLocal());
         searchFieldOutputs = createTextField(86, 12, ButtonToolTips.SearchFieldOutputs.getLocal());
@@ -168,17 +164,27 @@ public class GuiInterfaceTerminal extends AEBaseGui {
         this.getScrollBar().setRange(0, this.lines.size() - 1, 1);
     }
 
-    private int calculateRowsCount() {
-        final int maxRows = getMaxRows();
-        final int jeiPadding = jeiEnabled ? 22 + 18 : 0;
-        final int extraSpace = this.height - MAGIC_HEIGHT_NUMBER - jeiPadding;
-
-        return Math.max(6, Math.min(maxRows, extraSpace / 18));
-    }
-
     @Override
     public void initGui() {
-        this.rows = calculateRowsCount();
+        final int jeiSearchOffset = Platform.isJEICenterSearchBarEnabled() ? 40 : 0;
+        final int maxScreenRows = (int) Math.floor((double) (this.height - MAGIC_HEIGHT_NUMBER - jeiSearchOffset) / 18);
+
+        final Enum<?> terminalStyle = AEConfig.instance().getConfigManager().getSetting(Settings.TERMINAL_STYLE);
+
+        if (terminalStyle == TerminalStyle.FULL) {
+            this.rows = maxScreenRows;
+        } else if (terminalStyle == TerminalStyle.TALL) {
+            this.rows = (int) Math.ceil(maxScreenRows * 0.75);
+        } else if (terminalStyle == TerminalStyle.MEDIUM) {
+            this.rows = (int) Math.ceil(maxScreenRows * 0.5);
+        } else if (terminalStyle == TerminalStyle.SMALL) {
+            this.rows = (int) Math.ceil(maxScreenRows * 0.25);
+        } else {
+            this.rows = maxScreenRows;
+        }
+
+        this.rows = Math.min(this.rows, this.getMaxRows());
+        this.rows = Math.max(this.rows, this.getMinRows());
 
         super.initGui();
 
@@ -194,7 +200,7 @@ public class GuiInterfaceTerminal extends AEBaseGui {
         searchFieldNames.y = guiTop + 38;
 
         terminalStyleBox.x = guiLeft - 18;
-        terminalStyleBox.y = guiTop + 8 + jeiButtonPadding;
+        terminalStyleBox.y = guiTop + 8 + this.jeiOffset;
         guiButtonBrokenRecipes.x = guiLeft - 18;
         guiButtonBrokenRecipes.y = terminalStyleBox.y + 20;
         guiButtonHideFull.x = guiLeft - 18;
@@ -686,7 +692,11 @@ public class GuiInterfaceTerminal extends AEBaseGui {
     }
 
     private int getMaxRows() {
-        return AEConfig.instance().getConfigManager().getSetting(Settings.TERMINAL_STYLE) != TerminalStyle.TALL ? 6 : Integer.MAX_VALUE;
+        return Integer.MAX_VALUE;
+    }
+
+    private int getMinRows() {
+        return 6;
     }
 
     private ClientDCInternalInv getById(final long id, final long sortBy, final String string) {

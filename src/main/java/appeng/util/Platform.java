@@ -75,6 +75,7 @@ import gregtech.api.util.GTUtility;
 import ic2.api.item.ICustomDamageItem;
 import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
+import mezz.jei.config.Config;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
@@ -543,6 +544,22 @@ public class Platform {
             return Loader.instance().getActiveModList()
                     .stream().anyMatch(mod -> mod.getModId().equals(k));
         });
+    }
+
+    public static boolean isJEIEnabled() {
+        if (isModLoaded("jei")) {
+            return Config.isOverlayEnabled();
+        } else {
+            return false;
+        }
+    }
+
+    public static boolean isJEICenterSearchBarEnabled() {
+        if (isModLoaded("jei")) {
+            return Config.isCenterSearchBarEnabled() && Config.isOverlayEnabled();
+        } else {
+            return false;
+        }
     }
 
     public static ItemStack findMatchingRecipeOutput(final InventoryCrafting ic, final World world) {

@@ -112,6 +112,7 @@ public enum ButtonToolTips {
     TerminalStyle,
     TerminalStyle_Full,
     TerminalStyle_Tall,
+    TerminalStyle_Medium,
     TerminalStyle_Small,
 
     Stash,
