@@ -135,7 +135,7 @@ public class ContainerInterfaceTerminal extends AEBaseContainer {
                             missing = true;
                         } else {
                             final DualityInterface dual = ih.getInterfaceDuality();
-                            if (!t.unlocalizedName.equals(dual.getTermName())) {
+                            if (!t.unlocalizedName.equals(dual.getTermName()) || t.craftingMachines != dual.getCraftingMachineCount()) {
                                 missing = true;
                             }
                         }
@@ -157,7 +157,7 @@ public class ContainerInterfaceTerminal extends AEBaseContainer {
                             missing = true;
                         } else {
                             final DualityInterface dual = ih.getInterfaceDuality();
-                            if (!t.unlocalizedName.equals(dual.getTermName())) {
+                            if (!t.unlocalizedName.equals(dual.getTermName()) || t.craftingMachines != dual.getCraftingMachineCount()) {
                                 missing = true;
                             }
                         }
@@ -377,6 +377,7 @@ public class ContainerInterfaceTerminal extends AEBaseContainer {
             tag.setTag("pos", NBTUtil.createPosTag(inv.pos));
             tag.setInteger("dim", inv.dim);
             tag.setInteger("numUpgrades", inv.numUpgrades);
+            tag.setInteger("craftingMachines", inv.craftingMachines);
         }
 
         for (int x = 0; x < length; x++) {
@@ -428,6 +429,7 @@ public class ContainerInterfaceTerminal extends AEBaseContainer {
         private final BlockPos pos;
         private final int dim;
         private final int numUpgrades;
+        private final int craftingMachines;
 
         public InvTracker(final DualityInterface dual, final IItemHandler patterns, final String unlocalizedName) {
             this.server = patterns;
@@ -437,6 +439,7 @@ public class ContainerInterfaceTerminal extends AEBaseContainer {
             this.pos = dual.getLocation().getPos();
             this.dim = dual.getLocation().getWorld().provider.getDimension();
             this.numUpgrades = dual.getInstalledUpgrades(Upgrades.PATTERN_EXPANSION);
+            this.craftingMachines = dual.getCraftingMachineCount();
         }
     }
 
