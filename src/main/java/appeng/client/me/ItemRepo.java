@@ -36,7 +36,9 @@ import appeng.util.prioritylist.IPartitionList;
 import net.minecraft.item.ItemStack;
 
 import javax.annotation.Nonnull;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -44,12 +46,20 @@ import java.util.regex.Pattern;
 
 public class ItemRepo {
 
+    private static final Comparator<IAEItemStack> PINNED_ROW_COMPARATOR = Comparator.comparing(stack -> {
+        final PinnedKeys.PinInfo info = PinnedKeys.getPinInfo(stack);
+        return info != null ? info.since : Instant.MAX;
+    });
+
     private final IItemList<IAEItemStack> list = AEApi.instance().storage().getStorageChannel(IItemStorageChannel.class).createList();
     private List<IAEItemStack> view = new ArrayList<>();
+    private final ArrayList<IAEItemStack> pinnedRow = new ArrayList<>();
     private final IScrollSource src;
     private final ISortSource sortSrc;
 
     private int rowSize = 9;
+
+    private boolean pinnedRowEnabled = false;
 
     private String searchString = "";
     private IPartitionList<IAEItemStack> myPartitionList;
@@ -72,6 +82,13 @@ public class ItemRepo {
     }
 
     public IAEItemStack getReferenceItem(int idx) {
+        if (this.pinnedRowEnabled && !this.pinnedRow.isEmpty()) {
+            if (idx < this.rowSize) {
+                return idx < this.pinnedRow.size() ? this.pinnedRow.get(idx) : null;
+            }
+            idx -= this.rowSize;
+        }
+
         idx += this.src.getCurrentScroll() * this.rowSize;
 
         if (idx >= this.view.size()) {
@@ -149,6 +166,7 @@ public class ItemRepo {
             resort = false;
 
             view = new ArrayList<>();
+            pinnedRow.clear();
 
             ItemSorters.setDirection((appeng.api.config.SortDir) sortDir);
             ItemSorters.init();
@@ -158,6 +176,31 @@ public class ItemRepo {
             for (IAEItemStack is : this.list) {
                 addIAE(is, viewMode);
             }
+
+            if (this.pinnedRowEnabled && !PinnedKeys.isEmpty()) {
+                for (IAEItemStack pinnedKey : PinnedKeys.getPinnedKeys()) {
+                    final PinnedKeys.PinInfo info = PinnedKeys.getPinInfo(pinnedKey);
+                    if (info == null || info.reason == PinnedKeys.PinReason.CRAFTING) {
+                        continue;
+                    }
+
+                    boolean alreadyShown = false;
+                    for (IAEItemStack shown : this.pinnedRow) {
+                        if (pinnedKey.isSameType(shown)) {
+                            alreadyShown = true;
+                            break;
+                        }
+                    }
+
+                    if (!alreadyShown) {
+                        final IAEItemStack fake = pinnedKey.copy();
+                        fake.reset();
+                        this.pinnedRow.add(fake);
+                    }
+                }
+            }
+
+            pinnedRow.sort(PINNED_ROW_COMPARATOR);
 
             view.sort(c);
         }
@@ -183,6 +226,13 @@ public class ItemRepo {
     }
 
     private void addIAE(IAEItemStack is, Enum viewMode) {
+
+        final boolean hasPinnedRow = this.pinnedRowEnabled && !PinnedKeys.isEmpty();
+
+        if (hasPinnedRow && this.pinnedRow.size() < this.rowSize && PinnedKeys.isPinned(is)) {
+            this.pinnedRow.add(is);
+            return;
+        }
 
         final boolean needsZeroCopy = viewMode == ViewItems.CRAFTABLE;
 
@@ -261,11 +311,24 @@ public class ItemRepo {
     }
 
     public int size() {
-        return this.view.size();
+        return this.view.size() + this.pinnedRow.size();
     }
 
     public void clear() {
         this.list.resetStatus();
+        this.pinnedRow.clear();
+    }
+
+    public boolean hasPinnedRow() {
+        return this.pinnedRowEnabled && !this.pinnedRow.isEmpty();
+    }
+
+    public List<IAEItemStack> getPinnedEntries() {
+        return Collections.unmodifiableList(this.pinnedRow);
+    }
+
+    public void setPinnedRowEnabled(final boolean pinnedRowEnabled) {
+        this.pinnedRowEnabled = pinnedRowEnabled;
     }
 
     public boolean hasPower() {

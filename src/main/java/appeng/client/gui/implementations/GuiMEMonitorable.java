@@ -34,6 +34,7 @@ import appeng.client.gui.AEBaseMEGui;
 import appeng.client.gui.widgets.*;
 import appeng.client.me.InternalSlotME;
 import appeng.client.me.ItemRepo;
+import appeng.client.me.PinnedKeys;
 import appeng.client.me.SlotME;
 import appeng.container.implementations.ContainerMEMonitorable;
 import appeng.container.slot.AppEngSlot;
@@ -54,6 +55,7 @@ import appeng.tile.misc.TileSecurityStation;
 import appeng.util.IConfigManagerHost;
 import appeng.util.Platform;
 import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
@@ -111,6 +113,7 @@ public class GuiMEMonitorable extends AEBaseMEGui implements ISortSource, IConfi
         final GuiScrollbar scrollbar = new GuiScrollbar();
         this.setScrollBar(scrollbar);
         this.repo = new ItemRepo(scrollbar, this);
+        this.repo.setPinnedRowEnabled(true);
 
         this.xSize = 185;
         this.ySize = 204;
@@ -163,7 +166,12 @@ public class GuiMEMonitorable extends AEBaseMEGui implements ISortSource, IConfi
 
     private void setScrollBar() {
         this.getScrollBar().setTop(18).setLeft(175).setHeight(this.rows * 18 - 2);
-        this.getScrollBar().setRange(0, (this.repo.size() + this.perRow - 1) / this.perRow - this.rows, Math.max(1, this.rows / 6));
+
+        final int pinnedRows = this.repo.hasPinnedRow() ? 1 : 0;
+        final int viewSize = this.repo.size() - (pinnedRows == 0 ? 0 : this.repo.getPinnedEntries().size());
+        final int viewRows = (viewSize + this.perRow - 1) / this.perRow;
+
+        this.getScrollBar().setRange(0, viewRows - (this.rows - pinnedRows), Math.max(1, this.rows / 6));
     }
 
     @Override
@@ -214,6 +222,8 @@ public class GuiMEMonitorable extends AEBaseMEGui implements ISortSource, IConfi
                 .getConfigManager()
                 .getSetting(
                         Settings.TERMINAL_STYLE) != TerminalStyle.FULL ? 9 : 9 + ((this.width - this.standardSize) / 18);
+
+        this.repo.setRowSize(this.perRow);
 
         final int magicNumber = 114 + 1;
         final int extraSpace = this.height - magicNumber - this.reservedSpace;
@@ -385,6 +395,15 @@ public class GuiMEMonitorable extends AEBaseMEGui implements ISortSource, IConfi
         super.onGuiClosed();
         Keyboard.enableRepeatEvents(false);
         memoryText = this.searchField.getText();
+
+        for (final IAEItemStack pinned : this.repo.getPinnedEntries()) {
+            final PinnedKeys.PinInfo info = PinnedKeys.getPinInfo(pinned);
+            if (info != null && info.reason == PinnedKeys.PinReason.CRAFTING) {
+                if (!PinnedKeys.hasPendingJob(pinned)) {
+                    info.canPrune = true;
+                }
+            }
+        }
     }
 
     @Override
@@ -404,6 +423,16 @@ public class GuiMEMonitorable extends AEBaseMEGui implements ISortSource, IConfi
 
         this.drawTexturedModalRect(offsetX, offsetY + 16 + this.rows * 18 + this.lowerTextureOffset, 0, 106 - 18 - 18, x_width,
                 99 + this.reservedSpace - this.lowerTextureOffset);
+
+        if (this.repo.hasPinnedRow()) {
+            final int highlightLeft = offsetX + this.offsetX;
+            final int highlightTop = offsetY + 18;
+            final int highlightRight = highlightLeft + this.perRow * 18;
+            final int highlightBottom = highlightTop + 18;
+
+            drawRect(highlightLeft, highlightTop, highlightRight, highlightBottom, 0x40FFFF40);
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        }
 
         if (this.viewCell) {
             boolean update = false;

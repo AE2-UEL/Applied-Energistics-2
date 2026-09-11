@@ -23,6 +23,7 @@ import appeng.api.parts.CableRenderMode;
 import appeng.api.util.AEColor;
 import appeng.block.AEBaseBlock;
 import appeng.client.gui.AEBaseGui;
+import appeng.client.me.PinnedKeys;
 import appeng.client.render.crafting.ItemEncodedPatternBakedModel;
 import appeng.client.render.effects.*;
 import appeng.client.render.model.UVLModelLoader;
@@ -69,6 +70,8 @@ import net.minecraftforge.fml.client.registry.RenderingRegistry;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.InputEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent;
+import net.minecraftforge.fml.common.network.FMLNetworkEvent;
 import org.lwjgl.input.Mouse;
 
 import java.io.IOException;
@@ -127,6 +130,22 @@ public class ClientHelper extends ServerHelper {
     @SubscribeEvent
     public void renderWorldLastEvent(RenderWorldLastEvent event) {
         HighlighterHandler.tick(event);
+    }
+
+    @SubscribeEvent
+    public void onClientDisconnect(final FMLNetworkEvent.ClientDisconnectionFromServerEvent event) {
+        PinnedKeys.clearPinnedKeys();
+    }
+
+    @SubscribeEvent
+    public void onClientTick(final TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) {
+            return;
+        }
+
+        if (Minecraft.getMinecraft().currentScreen == null) {
+            PinnedKeys.prune();
+        }
     }
 
     @Override
