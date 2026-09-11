@@ -72,7 +72,6 @@ public class GuiInterfaceTerminal extends AEBaseGui {
     protected static final int OFFSET_X = 21;
     protected final GuiText guiTitle;
     private static final int MAGIC_HEIGHT_NUMBER = 52 + 99;
-    private static final String MOLECULAR_ASSEMBLER = "tile.appliedenergistics2.molecular_assembler";
 
     private final boolean jeiEnabled;
     private final int jeiButtonPadding;
@@ -82,6 +81,7 @@ public class GuiInterfaceTerminal extends AEBaseGui {
     private final HashMap<ClientDCInternalInv, BlockPos> blockPosHashMap = new HashMap<>();
     private final HashMap<GuiButton, ClientDCInternalInv> guiButtonHashMap = new HashMap<>();
     private final Map<ClientDCInternalInv, Integer> numUpgradesMap = new HashMap<>();
+    private final Map<ClientDCInternalInv, Integer> craftingMachinesMap = new HashMap<>();
     private final ArrayList<String> names = new ArrayList<>();
     private final ArrayList<Object> lines = new ArrayList<>();
     private final Set<Object> matchedStacks = new HashSet<>();
@@ -99,10 +99,10 @@ public class GuiInterfaceTerminal extends AEBaseGui {
 
     private boolean refreshList = false;
 
-    /* These are worded so that the intended default is false */
-    private boolean onlyShowWithSpace = false;
-    private boolean onlyMolecularAssemblers = false;
-    private boolean onlyBrokenRecipes = false;
+    /* These are worded so that the intended default is false, and are remembered across sessions */
+    private boolean onlyShowWithSpace = AEConfig.instance().isInterfaceTerminalOnlyWithSpace();
+    private boolean onlyMolecularAssemblers = AEConfig.instance().isInterfaceTerminalOnlyCraftingMachines();
+    private boolean onlyBrokenRecipes = AEConfig.instance().isInterfaceTerminalOnlyBrokenRecipes();
     private int rows = 6;
 
     public GuiInterfaceTerminal(final InventoryPlayer inventoryPlayer, final PartInterfaceTerminal te) {
@@ -341,12 +341,15 @@ public class GuiInterfaceTerminal extends AEBaseGui {
             mc.player.closeScreen();
         } else if (btn == guiButtonHideFull) {
             onlyShowWithSpace = !onlyShowWithSpace;
+            AEConfig.instance().setInterfaceTerminalOnlyWithSpace(onlyShowWithSpace);
             this.refreshList();
         } else if (btn == guiButtonAssemblersOnly) {
             onlyMolecularAssemblers = !onlyMolecularAssemblers;
+            AEConfig.instance().setInterfaceTerminalOnlyCraftingMachines(onlyMolecularAssemblers);
             this.refreshList();
         } else if (btn == guiButtonBrokenRecipes) {
             onlyBrokenRecipes = !onlyBrokenRecipes;
+            AEConfig.instance().setInterfaceTerminalOnlyBrokenRecipes(onlyBrokenRecipes);
             this.refreshList();
         } else if (btn instanceof GuiImgButton iBtn) {
             if (iBtn.getSetting() != Settings.ACTIONS) {
@@ -475,6 +478,7 @@ public class GuiInterfaceTerminal extends AEBaseGui {
                     blockPosHashMap.put(current, NBTUtil.getPosFromTag(invData.getCompoundTag("pos")));
                     dimHashMap.put(current, invData.getInteger("dim"));
                     numUpgradesMap.put(current, invData.getInteger("numUpgrades"));
+                    craftingMachinesMap.put(current, invData.getInteger("craftingMachines"));
 
                     for (int x = 0; x < current.getInventory().getSlots(); x++) {
                         final String which = Integer.toString(x);
@@ -561,9 +565,10 @@ public class GuiInterfaceTerminal extends AEBaseGui {
                 cachedSearch.remove(entry);
                 continue;
             }
-            // Exit if molecular assembler filter is on and this is not a molecular assembler
-            // Forge documantation said unlocalized name shouldn't be use for logic, so we might need a better way......
-            if (onlyMolecularAssemblers && !entry.getUnlocalizedName().equals(MOLECULAR_ASSEMBLER)) {
+            // Exit if the crafting machine filter is on and no adjacent machine accepts patterns.
+            // The server counts ICraftingMachine neighbours, so this also catches interfaces that carry a
+            // custom name or that sit next to a non-assembler machine on their first face.
+            if (onlyMolecularAssemblers && craftingMachinesMap.getOrDefault(entry, 0) == 0) {
                 cachedSearch.remove(entry);
                 continue;
             }

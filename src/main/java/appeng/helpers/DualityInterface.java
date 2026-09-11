@@ -1479,6 +1479,27 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
         return "Nothing";
     }
 
+    /**
+     * Counts the adjacent tiles this interface can push a whole pattern to, i.e. Molecular Assemblers and any
+     * other machine implementing {@link ICraftingMachine}. Used by the Interface Terminal to filter and sort
+     * on actual crafting capacity instead of guessing from the displayed block name.
+     */
+    public int getCraftingMachineCount() {
+        final TileEntity hostTile = this.iHost.getTileEntity();
+        final World hostWorld = hostTile.getWorld();
+        int count = 0;
+
+        for (final EnumFacing direction : this.iHost.getTargets()) {
+            final TileEntity directedTile = hostWorld.getTileEntity(hostTile.getPos().offset(direction));
+
+            if (directedTile instanceof ICraftingMachine && ((ICraftingMachine) directedTile).acceptsPlans()) {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
     public long getSortValue() {
         final TileEntity te = this.iHost.getTileEntity();
         return ((long) te.getPos().getZ() << 24) ^ ((long) te.getPos().getX() << 8) ^ te.getPos().getY();
