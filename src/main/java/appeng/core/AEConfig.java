@@ -83,6 +83,7 @@ public final class AEConfig extends Configuration implements IConfigurableObject
     private int craftingCalculationTimePerTick = 5;
     private PowerUnits selectedPowerUnit = PowerUnits.AE;
     private boolean showCraftableTooltip = true;
+    private boolean pinAutoCraftedItems = true;
     private boolean showPlacementPreview = true;
     private boolean showCellContentsPreview = true;
 
@@ -259,6 +260,7 @@ public final class AEConfig extends Configuration implements IConfigurableObject
         this.useLargeFonts = this.get("Client", "useTerminalUseLargeFont", false).getBoolean(false);
         this.useColoredCraftingStatus = this.get("Client", "useColoredCraftingStatus", true).getBoolean(true);
         this.showCraftableTooltip = this.get("Client", "showCraftableTooltip", true, "Whether to add \"Craftable\" to item tooltips when they can be crafted automatically.").getBoolean(true);
+        this.pinAutoCraftedItems = this.get("Client", "pinAutoCraftedItems", true, "Whether to pin items that the player auto-crafts to the first row of ME terminals.").getBoolean(true);
         this.showPlacementPreview = this.get("Client", "showPlacementPreview", true, "Whether to show a preview of part and facade placement.").getBoolean(true);
         this.showCellContentsPreview = this.get("Client", "showCellContentsPreview", true, "Whether to show a preview of cell contents in tooltips.").getBoolean(true);
 
@@ -516,6 +518,10 @@ public final class AEConfig extends Configuration implements IConfigurableObject
 
     public boolean isShowCraftableTooltip() {
         return this.showCraftableTooltip;
+    }
+
+    public boolean isPinAutoCraftedItems() {
+        return this.pinAutoCraftedItems;
     }
 
     public boolean showPlacementPreview() {

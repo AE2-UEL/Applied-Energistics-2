@@ -45,6 +45,7 @@ import appeng.core.AppEng;
 import appeng.core.features.AEFeature;
 import appeng.core.sync.network.NetworkHandler;
 import appeng.core.sync.packets.PacketCraftingToast;
+import appeng.core.sync.packets.PacketPinCraftedItem;
 import appeng.crafting.*;
 import appeng.helpers.PatternHelper;
 import appeng.me.cache.CraftingGridCache;
@@ -386,22 +387,43 @@ public final class CraftingCPUCluster implements IAECluster, ICraftingCPU {
         this.elapsedTime = 0;
         this.isComplete = true;
 
+        this.sendPinCraftedItem(true);
         notifyRequester(false);
         this.requestingPlayerUUID = null;
     }
 
     private void notifyRequester(boolean cancelled) {
-        if (!Platform.isServer()) return;
-        if (this.requestingPlayerUUID == null) return;
         if (this.finalOutput == null) return;
         if (!AEConfig.instance().isFeatureEnabled(AEFeature.CRAFTING_TOASTS)) return;
 
+        final EntityPlayerMP playerMP = this.resolveRequestingPlayer();
+        if (playerMP == null) return;
+
+        try {
+            NetworkHandler.instance().sendTo(new PacketCraftingToast(this.finalOutput, cancelled), playerMP);
+        } catch (IOException ignored) {}
+    }
+
+    private void sendPinCraftedItem(boolean finished) {
+        if (this.finalOutput == null) return;
+
+        final EntityPlayerMP playerMP = this.resolveRequestingPlayer();
+        if (playerMP == null) return;
+
+        try {
+            NetworkHandler.instance().sendTo(new PacketPinCraftedItem(this.finalOutput.copy(), finished), playerMP);
+        } catch (IOException ignored) {}
+    }
+
+    private EntityPlayerMP resolveRequestingPlayer() {
+        if (!Platform.isServer()) return null;
+        if (this.requestingPlayerUUID == null) return null;
+
         var player = AppEng.proxy.getPlayerByUUID(this.requestingPlayerUUID);
         if (player instanceof EntityPlayerMP playerMP) {
-            try {
-                NetworkHandler.instance().sendTo(new PacketCraftingToast(this.finalOutput, cancelled), playerMP);
-            } catch (IOException ignored) {}
+            return playerMP;
         }
+        return null;
     }
 
     private void updateCPU() {
@@ -545,6 +567,7 @@ public final class CraftingCPUCluster implements IAECluster, ICraftingCPU {
             this.postCraftingStatusChange(is);
         }
 
+        this.sendPinCraftedItem(true);
         notifyRequester(true);
         this.requestingPlayerUUID = null;
         this.finalOutput = null;
@@ -835,6 +858,8 @@ public final class CraftingCPUCluster implements IAECluster, ICraftingCPU {
                 } else {
                     this.requestingPlayerUUID = null;
                 }
+
+                this.sendPinCraftedItem(false);
 
                 this.markDirty();
 
